@@ -44,4 +44,3 @@ IF ERRORLEVEL 0 (
 
 REM èIóπ
 pause
-exit
