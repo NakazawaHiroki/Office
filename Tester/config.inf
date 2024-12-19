@@ -1,0 +1,7 @@
+TestURL=http://10.150.16.158:84/dwf-web/login/init
+TestID=densan
+TestPassword=densan
+LedgerID=159005
+LedgerType=1
+TestFilepath=C:/development/Dugong/tool/Tester/Sample.xlsx
+EdgeDriverPath=.
