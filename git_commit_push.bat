@@ -1,21 +1,21 @@
-ï»¿@echo off
-REM ãƒãƒƒãƒãƒ•ã‚¡ã‚¤ãƒ«ã®é–‹å§‹
+@echo off
+REM ƒoƒbƒ`ƒtƒ@ƒCƒ‹‚ÌŠJn
 
-REM ãƒªãƒã‚¸ãƒˆãƒªã®ãƒ‘ã‚¹ã‚’è¨­å®š
+REM ƒŠƒ|ƒWƒgƒŠ‚ÌƒpƒX‚ğİ’è
 SET REPO_PATH=C:\development\MyProject
 
-REM ã‚³ãƒŸãƒƒãƒˆãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¨­å®šï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¯ "Auto commit"ï¼‰
+REM ƒRƒ~ƒbƒgƒƒbƒZ[ƒW‚ğİ’èiƒfƒtƒHƒ‹ƒg‚Í "Auto commit"j
 SET COMMIT_MESSAGE=Auto commit
 
-REM ã‚³ãƒŸãƒƒãƒˆãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®å¼•æ•°ãŒã‚ã‚‹å ´åˆã€ãã‚Œã‚’ä½¿ç”¨
+REM ƒRƒ~ƒbƒgƒƒbƒZ[ƒW‚Ìˆø”‚ª‚ ‚éê‡A‚»‚ê‚ğg—p
 IF NOT "%~1"=="" (
     SET COMMIT_MESSAGE=%~1
 )
 
-REM ãƒªãƒã‚¸ãƒˆãƒªãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã«ç§»å‹•
+REM ƒŠƒ|ƒWƒgƒŠƒfƒBƒŒƒNƒgƒŠ‚ÉˆÚ“®
 cd /d "%REPO_PATH%"
 
-REM Gitãƒªãƒã‚¸ãƒˆãƒªã‹ç¢ºèª
+REM GitƒŠƒ|ƒWƒgƒŠ‚©Šm”F
 git rev-parse --is-inside-work-tree >nul 2>&1
 IF ERRORLEVEL 1 (
     echo This is not a valid Git repository.
@@ -23,25 +23,25 @@ IF ERRORLEVEL 1 (
     EXIT /b 1
 )
 
-REM ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ³ã‚°
+REM ƒXƒe[ƒWƒ“ƒO
 echo Staging changes...
 git add -A
 
-REM ã‚³ãƒŸãƒƒãƒˆ
+REM ƒRƒ~ƒbƒg
 echo Committing changes with message: "%COMMIT_MESSAGE%"
 git commit -m "%COMMIT_MESSAGE%"
 
-REM ãƒ—ãƒƒã‚·ãƒ¥
+REM ƒvƒbƒVƒ…
 echo Pushing to the remote repository...
 git push
 
-REM çµ‚äº†ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸
+REM I—¹ƒƒbƒZ[ƒW
 IF ERRORLEVEL 0 (
     echo Changes pushed successfully.
 ) ELSE (
     echo Failed to push changes.
 )
 
-REM çµ‚äº†
+REM I—¹
 pause
 exit
