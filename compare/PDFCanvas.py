@@ -305,11 +305,10 @@ class PDFCanvas(tk.Canvas):
             self.delete(btnID)
             self.delete(numTextID)
             self.delete(btnTextID)
-            rect = self.selectRect
             numId, btnID, numTextID, btnTextID = self.createNumberTag(CONST.NUM_TAG_TOP, rect.x0, rect.y0, rect.x1, rect.y1, idx)
             self.itemconfig(numId, outline=color)
             self.itemconfig(btnID, outline=color)
-            self.dctRectID[self.selectRect] = (idx, color, rectId, numId, btnID, numTextID, btnTextID)
+            self.dctRectID[rect] = (idx, color, rectId, numId, btnID, numTextID, btnTextID)
             if bCall:
                 self.callSpecRectinfo(self, nPage, rect, CONST.SR_TAGORI, CONST.NUM_TAG_TOP)
 
