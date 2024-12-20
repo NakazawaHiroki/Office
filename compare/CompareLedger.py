@@ -37,11 +37,11 @@ def only_numbers_input(char):
     return char.isdigit()
 
 ##################################################################
-#    ComapareLedger
+#    CompareLedger
 ###################################################################
-class ComapareLedger:
-    def __init__(self, root):
-        self.m_root: tk.Tk                  = root
+class CompareLedger(tk.Tk):
+    def __init__(self):
+        super().__init__()
         self.leftFrame: Frame               = None
         self.rightFrame: Frame              = None
         self.leftVScroll: Scrollbar         = None
@@ -54,11 +54,13 @@ class ComapareLedger:
         self.nextIdx                        = 0
         self.specRect                       = {}    #ユーザーの指示で矩形の設定を変更したリスト
 
+        self.title("PDF比較ツール")
+        self.geometry(f'{WINDOW_WIDTH}x{WINDOW_HEIGHT}')  # ウィンドウの初期サイズを設定
+
         #記録リストの作成
         self.matlist = MatList()
-
         # メインフレームを作成
-        main_frame = Frame(root)
+        main_frame = Frame(self)
         main_frame.pack(fill=tk.BOTH, expand=True)
         #ボタン等の作成
         self.createComponent(main_frame)
@@ -70,15 +72,13 @@ class ComapareLedger:
     #ウィンドウ内のコンポネントを作成する
     def createComponent(self, main_frame):
         # バリデーション関数を登録
-        vcmd = (root.register(only_numbers_input), '%S')
+        vcmd = (self.register(only_numbers_input), '%S')
 
         #クリップボードへコピーボタンを作成
         btn  = Button(main_frame,  text="To Clip", 
                       command=lambda: self.copyClipbord(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
         btn.place(x=ORGNX_TOOL, y=0)
-
-
         #matファイルパス表示
         self.mat_entry = tk.Entry(main_frame, width=26, font=('Arial', 10))
         self.mat_entry.place(x=ORGNX_LIST, y=3)
@@ -588,10 +588,7 @@ class ComapareLedger:
 
 #メインループ
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("PDF比較ツール")
-    root.geometry(f'{WINDOW_WIDTH}x{WINDOW_HEIGHT}')  # ウィンドウの初期サイズを設定
     #アプリを起動する
-    app = ComapareLedger(root)
-    root.update_idletasks()
-    root.mainloop()
+    app = CompareLedger()
+    app.update_idletasks()
+    app.mainloop()
