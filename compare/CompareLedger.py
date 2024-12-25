@@ -95,12 +95,12 @@ class CompareLedger(tk.Tk):
         btn  = Button(matFrame,  text="リセット", 
                       command=lambda: self.clearmat(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.grid(row=1, column=0, padx=10, pady=3)
+        btn.grid(row=1, column=0, pady=3)
         #matファイルを開くボタン
         btn  = Button(matFrame,  text=" ... ", 
                       command=lambda: self.selectmatfile(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.grid(row=1, column=1, padx=10, pady=3)
+        btn.grid(row=1, column=1, padx=5, pady=3, sticky="e")
 
         #マッチ情報リスト
         self.matLB = MultiLineLB(matFrame, MAT_LIST_WIDTH)
@@ -142,7 +142,7 @@ class CompareLedger(tk.Tk):
         btn  = Button(leftFrame,  text=" ... ", 
                       command=lambda: self.selectleftpdf(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.grid(row=0, column=1, padx=5, pady=2)
+        btn.grid(row=0, column=1, pady=2)
         #改ページ上下ボタン
         btn  = Button(leftFrame,  text="▲", 
                       command=lambda: self.pageupleftpdf(), 
@@ -160,7 +160,7 @@ class CompareLedger(tk.Tk):
         btn.grid(row=0, column=4, padx=2, pady=2)
 
         #クリップボードへコピーボタンを作成
-        btn  = Button(centerFrame,  text="To Clip", 
+        btn  = Button(centerFrame,  text="ToClip", 
                       command=lambda: self.copyClipbord(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
         btn.grid(row=0, column=0, padx=5, pady=2)
@@ -173,7 +173,7 @@ class CompareLedger(tk.Tk):
         btn  = Button(rightFrame,  text=" ... ", 
                       command=lambda: self.selectrightpdf(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.grid(row=0, column=1, padx=5, pady=2)
+        btn.grid(row=0, column=1, pady=2)
         #改ページ上下ボタン
         btn  = Button(rightFrame,  text="▲", 
                       command=lambda: self.pageuprightpdf(), 
