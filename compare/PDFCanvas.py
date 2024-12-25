@@ -31,8 +31,8 @@ def pdf_to_bmp(pdf_path, page_number):
 class PDFCanvas(tk.Canvas):
     def __init__(self, parent, callback1, callback2, callback3, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.callPointRec       = callback1
-        self.callPointCancel    = callback2
+        self.callPointRec           = callback1
+        self.callPointCancel        = callback2
         self.callSpecRectinfo       = callback3
         self.pdfPath                = ''
         self.document               = None
@@ -40,13 +40,14 @@ class PDFCanvas(tk.Canvas):
         self.pageNum                = 0
         self.rect_id                = None
         self.dctRectID              = {}
-        self.bYScrl                 = True
-        self.bXScrl                 = True
         self.bEnable                = True
         self.loadpdf                = False
         self.nextIdx                = 0         #矩形のインデックスの次の番号
         self.popup_menu             = None
         self.selectRect : fitz.Rect = None      #現在選択中の矩形の座標
+        self.v_scroll : tk.Scrollbar   = None
+        self.h_scroll : tk.Scrollbar   = None
+        self.dragStart              = ()
 
         #イベントのバインド
         self.bind("<ButtonPress-1>", self.on_mouse_down)
@@ -54,15 +55,19 @@ class PDFCanvas(tk.Canvas):
         self.bind("<ButtonRelease-1>", self.on_mouse_up)
         self.bind("<MouseWheel>", self.on_mousewheel)
         self.bind("<Shift-MouseWheel>", self.on_shift_mousewheel)
+        self.bind("<Button-3>", self.on_right_click)
+        self.bind("<B3-Motion>", self.on_rightbtn_drag)
+        self.bind("<ButtonRelease-3>", self.on_rightbtn_release)
         #クリックメニューを作成
         self.popup_menu = tk.Menu(self, tearoff=0)
         self.popup_menu.add_command(label="削除", command=self.on_delete_rect)
         self.popup_menu.add_command(label="一致にする", command=self.on_force_match)
         self.popup_menu.add_command(label="番号を上に付ける", command=self.on_move_number)
-        self.bind("<Button-3>", self.on_right_click)
 
-
-
+    #スクロールバーのセット
+    def setScrollBar(self, vscrol, hscrol):
+        self.v_scroll = vscrol
+        self.h_scroll = hscrol
 
     #インデックスの番号を設定する
     def updaterectIndex(self, idx):
@@ -116,17 +121,6 @@ class PDFCanvas(tk.Canvas):
         self.create_image(0, 0, anchor="nw", image=self.img_tk)
         self.config(scrollregion=(0, 0, pix.width, pix.height))
 
-        #親ウィジェットのサイズとスクロール領域サイズを比較する
-        parent_width = self.master.winfo_width()
-        if parent_width < pix.width:
-            self.bXScrl = True
-        else:
-            self.bXScrl = False
-        parent_height = self.master.winfo_height()
-        if parent_height < pix.height:
-            self.bYScrl = True
-        else:
-            self.bYScrl = False
         self.loadpdf = True
         self.dctRectID.clear()
         print(f"Resolution: {pix.width}x{pix.height} pixels")  # 解像度を表示
@@ -235,9 +229,9 @@ class PDFCanvas(tk.Canvas):
 
     #マウスカーソルが動いてる途中
     def on_mouse_move(self, event):
-        if self.bEnable and self.page is not None:
-            # マウス移動中に矩形を更新
-            if self.rect_id:
+        if self.page is not None:
+            if self.bEnable and self.rect_id:
+                # マウス移動中に矩形を更新
                 self.coords(self.rect_id, self.start_x, self.start_y, self.canvasx(event.x), self.canvasy(event.y))
 
     #マウスのボタンが離れた
@@ -254,13 +248,15 @@ class PDFCanvas(tk.Canvas):
                 self.delete(self.rect_id)
 
     def on_mousewheel(self, event):
+        v_first, v_last = self.v_scroll.get()
         # 垂直スクロール
-        if self.bYScrl:
+        if (v_last - v_first) < 1.0:
             self.yview_scroll(int(-1*(event.delta/40)), "units")
 
     def on_shift_mousewheel(self, event):
+        h_first, h_last = self.h_scroll.get()
         # Shiftキーを押しながらのホイール操作で水平スクロール
-        if self.bXScrl:
+        if (h_last - h_first) < 1.0:
             self.xview_scroll(int(-1*(event.delta/40)), "units")
 
     #キャンバス上でのクリックイベント
@@ -268,6 +264,7 @@ class PDFCanvas(tk.Canvas):
         #クリック座標から押されたボタンを検出する
         px = self.canvasx(event.x)
         py = self.canvasy(event.y)
+        self.dragStart = (event.x, event.y)
         for key, (idx, color, rectId, numId, btnID, numTextID, btnTextID) in self.dctRectID.items():
             coords1 = self.coords(numId)
             nx1, ny1, nx2, ny2 = coords1
@@ -277,6 +274,18 @@ class PDFCanvas(tk.Canvas):
                 self.popup_menu.post(event.x_root, event.y_root)
                 self.selectRect = key
                 break
+
+    def on_rightbtn_drag(self, event):
+        if self.page is not None:
+            event.widget.config(cursor="hand2")
+            delta_x = event.x - self.dragStart[0]
+            delta_y = event.y - self.dragStart[1]
+            self.xview_scroll(-int(delta_x / 4), "units")  # 水平方向にスクロール
+            self.yview_scroll(-int(delta_y / 4), "units")  # 垂直方向にスクロール
+            self.dragStart = (event.x, event.y)
+
+    def on_rightbtn_release(self, event):
+        event.widget.config(cursor="arrow")
 
     #ポップアップメニューの削除を選択
     def on_delete_rect(self):

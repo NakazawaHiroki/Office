@@ -15,20 +15,13 @@ import CONST
 ###################################################################
 #   アプリケーション定数
 ###################################################################
-WINDOW_WIDTH            = 1600
-WINDOW_HEIGHT           = 900
+WINDOW_WIDTH            = 1400
+WINDOW_HEIGHT           = 800
 BUTTON_CAPTION_SIZE     = 9
 BUTTON_CAPTION_FONT     = 'Arial'
 LABEL_TEXT_SIZE         = 9
 LABEL_TEXT_FONT         = 'Arial'
-ORGNX_LIST              = 0     #リスト情報の左座標
-ORGNX_LEFTPDF           = 200   #左PDFの左端座標
-ORGNX_RIGHTPDF          = 900   #右PDFの左端座標
-ORGNX_TOOL              = 680   #ツールボタンの左端座標
-ORGNX_RIGHTWIDGET       = ORGNX_RIGHTPDF + 210  #右PDFのファイル開く関係左端座標
-CANV_WIDTH              = 700   #キャンバスの横幅
-CANV_HEIGHT             = 865   #キャンバスの縦幅
-CANV_ORGY               = 25    #キャンバスのY開始位置
+MAT_LIST_WIDTH          = 150
 
 ###################################################################
 
@@ -42,12 +35,6 @@ def only_numbers_input(char):
 class CompareLedger(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.leftFrame: Frame               = None
-        self.rightFrame: Frame              = None
-        self.leftVScroll: Scrollbar         = None
-        self.leftHScroll: Scrollbar         = None
-        self.rightVScroll: Scrollbar        = None
-        self.rightHScroll: Scrollbar        = None
         self.leftCanvas: PDFCanvas          = None
         self.rightCanvas: PDFCanvas         = None
         self.first                          = None  #最初に矩形を定義した側の情報(キャンバス,ページ番号,矩形座標,テキスト)
@@ -59,137 +46,166 @@ class CompareLedger(tk.Tk):
 
         #記録リストの作成
         self.matlist = MatList()
-        # メインフレームを作成
-        main_frame = Frame(self)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        #ボタン等の作成
-        self.createComponent(main_frame)
-        #サブフレームとスクロールバーの作成
-        self.createFrame(main_frame)
+
+        #左右のフレームの位置と属性を設定
+        self.columnconfigure(0, weight=0, minsize=MAT_LIST_WIDTH)
+        self.columnconfigure(1, weight=1, minsize=300)
+        self.rowconfigure(0, weight=1)
+
+        #マットファイル関連のフレーム
+        westFrame = Frame(self, width=MAT_LIST_WIDTH)
+        westFrame.grid(row=0, column=0, sticky="nsew")
+        self.createMatFrame(westFrame)
+
+        #ツールボックスとPDF表示用キャンバスを乗せるフレーム
+        eastFrame = Frame(self)
+        eastFrame.grid(row=0, column=1, sticky="nsew")
+
+        #ツールバーフレームとPDF表示用フレームを作成
+        toolFrame = Frame(eastFrame)
+        toolFrame.grid(row=0, column=0, columnspan=2, sticky="ew")
+        self.createToolFrame(toolFrame)
+
+        leftCanvasFrame = Frame(eastFrame)
+        leftCanvasFrame.grid(row=1, column=0, sticky="nsew")
+        self.leftCanvas = self.createCanvasFrame(leftCanvasFrame)
+
+        rightCanvasFrame = Frame(eastFrame)
+        rightCanvasFrame.grid(row=1, column=1, sticky="nsew")
+        self.rightCanvas = self.createCanvasFrame(rightCanvasFrame)
+
+        #各フレームの位置と属性を設定
+        eastFrame.columnconfigure(0, weight=1)
+        eastFrame.columnconfigure(1, weight=1)
+        eastFrame.rowconfigure(1, weight=1)
+
+        #矩形指定の有効化
         self.leftCanvas.enable()
         self.rightCanvas.enable()
 
-    #ウィンドウ内のコンポネントを作成する
-    def createComponent(self, main_frame):
+    #左側のMatリストボックス関連のフレームを作成する
+    def createMatFrame(self, matFrame : Frame):
+        #matリストのみ縦方向が伸縮できる
+        matFrame.rowconfigure(2, weight=1)
+
+        #matファイルパス表示
+        self.mat_entry = tk.Entry(matFrame, font=('Arial', 10))
+        self.mat_entry.grid(row=0, column=0, columnspan=2, padx=2, sticky="ew")
+        #リストを全て削除するボタン
+        btn  = Button(matFrame,  text="リセット", 
+                      command=lambda: self.clearmat(), 
+                      font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
+        btn.grid(row=1, column=0, padx=10, pady=3)
+        #matファイルを開くボタン
+        btn  = Button(matFrame,  text=" ... ", 
+                      command=lambda: self.selectmatfile(), 
+                      font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
+        btn.grid(row=1, column=1, padx=10, pady=3)
+
+        #マッチ情報リスト
+        self.matLB = MultiLineLB(matFrame, MAT_LIST_WIDTH)
+        self.matLB.grid(row=2, column=0, columnspan=2, sticky="nsew")
+
+        #matファイルを上書き保存ボタンを作成
+        btn  = Button(matFrame,  text="保  存", 
+                      command=lambda: self.savematfile(), 
+                      font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
+        btn.grid(row=3, column=0, padx=10, pady=3)
+        #matファイルを名前つけて保存ボタンを作成
+        btn  = Button(matFrame,  text="別名で保存", 
+                      command=lambda: self.renamesavematfile(), 
+                      font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
+        btn.grid(row=3, column=1, padx=10, pady=3)
+
+    #ツールバーのフレームを作成する
+    def createToolFrame(self, toolFrame : tk.Frame):
         # バリデーション関数を登録
         vcmd = (self.register(only_numbers_input), '%S')
 
-        #クリップボードへコピーボタンを作成
-        btn  = Button(main_frame,  text="To Clip", 
-                      command=lambda: self.copyClipbord(), 
-                      font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.place(x=ORGNX_TOOL, y=0)
-        #matファイルパス表示
-        self.mat_entry = tk.Entry(main_frame, width=26, font=('Arial', 10))
-        self.mat_entry.place(x=ORGNX_LIST, y=3)
-        #matファイルを開くボタン
-        btn  = Button(main_frame,  text=" ... ", 
-                      command=lambda: self.selectmatfile(), 
-                      font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.place(x=ORGNX_LIST+160, y=25)
-        #リストを全て削除するボタン
-        btn  = Button(main_frame,  text="リセット", 
-                      command=lambda: self.clearmat(), 
-                      font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.place(x=ORGNX_LIST+0, y=25)
+        toolFrame.columnconfigure(0, weight=1)
+        toolFrame.columnconfigure(1, weight=1)
+        toolFrame.columnconfigure(2, weight=1)
 
-        #マッチ情報リスト
-        self.matLB = MultiLineLB(main_frame, width=200, height=780)
-        self.matLB.place(x=ORGNX_LIST, y=55)
-        #matファイルを上書き保存ボタンを作成
-        btn  = Button(main_frame,  text="保  存", 
-                      command=lambda: self.savematfile(), 
-                      font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.place(x=ORGNX_LIST+15, y=843)
-        #matファイルを名前つけて保存ボタンを作成
-        btn  = Button(main_frame,  text="別名で保存", 
-                      command=lambda: self.renamesavematfile(), 
-                      font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.place(x=ORGNX_LIST+80, y=843)
+        #ツールバーは左中央右の3つのレフームで構成する
+        leftFrame = Frame(toolFrame)
+        centerFrame = Frame(toolFrame)
+        rightFrame = Frame(toolFrame)
+        leftFrame.grid(row=0, column=0, sticky="ew", padx=15)
+        centerFrame.grid(row=0, column=1, sticky="ew", padx=15)
+        rightFrame.grid(row=0, column=2, sticky="ew", padx=15)
 
         #左PDFファイル表示
-        self.leftpdf_entry = tk.Entry(main_frame, width=50, font=('Arial', 10))
-        self.leftpdf_entry.place(x=ORGNX_LEFTPDF, y=3)
+        self.leftpdf_entry = tk.Entry(leftFrame, font=('Arial', 10), width=30)
+        self.leftpdf_entry.grid(row=0, column=0, sticky="ew")
+        leftFrame.columnconfigure(0, weight=1)
         #左pdfファイルを開くボタン
-        btn  = Button(main_frame,  text=" ... ", 
+        btn  = Button(leftFrame,  text=" ... ", 
                       command=lambda: self.selectleftpdf(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.place(x=ORGNX_LEFTPDF+356, y=0)
+        btn.grid(row=0, column=1, padx=5, pady=2)
         #改ページ上下ボタン
-        btn  = Button(main_frame,  text="▲", 
+        btn  = Button(leftFrame,  text="▲", 
                       command=lambda: self.pageupleftpdf(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.place(x=ORGNX_LEFTPDF+390, y=0)
+        btn.grid(row=0, column=2, padx=2, pady=2)
         #左PDFページ表示
-        self.leftpdf_page_entry = tk.Entry(main_frame, width=4, font=('Arial', 10), justify="center", 
+        self.leftpdf_page_entry = tk.Entry(leftFrame, width=3, font=('Arial', 10), justify="center", 
                                            validate='key', validatecommand=vcmd)
-        self.leftpdf_page_entry.place(x=ORGNX_LEFTPDF+416, y=3)
+        self.leftpdf_page_entry.grid(row=0, column=3)
         self.leftpdf_page_entry.bind('<Return>', self.on_left_changepage)
         #改ページ下ボタン
-        btn  = Button(main_frame,  text="▼", 
+        btn  = Button(leftFrame,  text="▼", 
                       command=lambda: self.pagedownleftpdf(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.place(x=ORGNX_LEFTPDF+450, y=0)
+        btn.grid(row=0, column=4, padx=2, pady=2)
+
+        #クリップボードへコピーボタンを作成
+        btn  = Button(centerFrame,  text="To Clip", 
+                      command=lambda: self.copyClipbord(), 
+                      font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
+        btn.grid(row=0, column=0, padx=5, pady=2)
 
         #右PDFファイル表示
-        self.rightpdf_entry = tk.Entry(main_frame, width=50, font=('Arial', 10))
-        self.rightpdf_entry.place(x=ORGNX_RIGHTWIDGET, y=3)
+        self.rightpdf_entry = tk.Entry(rightFrame, font=('Arial', 10), width=30)
+        self.rightpdf_entry.grid(row=0, column=0, sticky="ew")
+        rightFrame.columnconfigure(0, weight=1)
         #右pdfファイルを開くボタン
-        btn  = Button(main_frame,  text=" ... ", 
+        btn  = Button(rightFrame,  text=" ... ", 
                       command=lambda: self.selectrightpdf(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.place(x=ORGNX_RIGHTWIDGET+356, y=0)
+        btn.grid(row=0, column=1, padx=5, pady=2)
         #改ページ上下ボタン
-        btn  = Button(main_frame,  text="▲", 
+        btn  = Button(rightFrame,  text="▲", 
                       command=lambda: self.pageuprightpdf(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.place(x=ORGNX_RIGHTWIDGET+390, y=0)
+        btn.grid(row=0, column=2, padx=2, pady=2)
         #右PDFページ表示
-        self.rightpdf_page_entry = tk.Entry(main_frame, width=4, font=('Arial', 10), justify="center", 
+        self.rightpdf_page_entry = tk.Entry(rightFrame, width=3, font=('Arial', 10), justify="center", 
                                             validate='key', validatecommand=vcmd)
         self.rightpdf_page_entry.bind('<Return>', self.on_right_changepage)
-        self.rightpdf_page_entry.place(x=ORGNX_RIGHTWIDGET+416, y=3)
+        self.rightpdf_page_entry.grid(row=0, column=3)
         #改ページ下ボタン
-        btn  = Button(main_frame,  text="▼", 
+        btn  = Button(rightFrame,  text="▼", 
                       command=lambda: self.pagedownrightpdf(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.place(x=ORGNX_RIGHTWIDGET+450, y=0)
+        btn.grid(row=0, column=4, padx=2, pady=2)
 
-    #サブフレームとスクロールバーの作成
-    def createFrame(self, main_frame):
-        #左側PDF表示領域の作成
-        self.leftFrame = Frame(main_frame)
-        self.leftFrame.place(x=ORGNX_LEFTPDF, y=CANV_ORGY, width=CANV_WIDTH, height=CANV_HEIGHT)
-        #左PDF表示キャンバスを作成
-        self.leftCanvas = PDFCanvas(self.leftFrame, self.PointRec, self.PointCancel, self.specifyRectInfo, bg="gray")
-        self.leftCanvas.grid(row=0, column=0, sticky="nsew")
+    #キャンバス用のフレームを作成する
+    def createCanvasFrame(self, canvFrame : Frame):
+        canvFrame.rowconfigure(0, weight=1)
+        canvFrame.columnconfigure(0, weight=1)
+        pdfCanvas = PDFCanvas(canvFrame, self.PointRec, self.PointCancel, self.specifyRectInfo, bg="gray")
+        pdfCanvas.grid(row=0, column=0, sticky="nsew")
         # 垂直スクロールバーを作成
-        self.leftVScroll = Scrollbar(self.leftFrame, orient=tk.VERTICAL, command=self.leftCanvas.yview)
-        self.leftVScroll.grid(row=0, column=1, sticky="ns")
+        VScroll = Scrollbar(canvFrame, orient=tk.VERTICAL, command=pdfCanvas.yview)
+        VScroll.grid(row=0, column=1, sticky="ns")
         # 水平スクロールバーを作成
-        self.leftHScroll = Scrollbar(self.leftFrame, orient=tk.HORIZONTAL, command=self.leftCanvas.xview)
-        self.leftHScroll.grid(row=1, column=0, sticky="ew")
+        HScroll = Scrollbar(canvFrame, orient=tk.HORIZONTAL, command=pdfCanvas.xview)
+        HScroll.grid(row=1, column=0, sticky="ew")
         # キャンバスにスクロールバーを設定
-        self.leftFrame.grid_rowconfigure(0, weight=1)
-        self.leftFrame.grid_columnconfigure(0, weight=1)
-        self.leftCanvas.configure(xscrollcommand=self.leftHScroll.set, yscrollcommand=self.leftVScroll.set)
-
-        #右側PDF表示領域の作成
-        self.rightFrame = Frame(main_frame)
-        self.rightFrame.place(x=ORGNX_RIGHTPDF, y=CANV_ORGY, width=CANV_WIDTH, height=CANV_HEIGHT)
-        #右PDFキャンバスを作成
-        self.rightCanvas = PDFCanvas(self.rightFrame, self.PointRec, self.PointCancel, self.specifyRectInfo, bg="gray")
-        self.rightCanvas.grid(row=0, column=0, sticky="nsew")
-        # 垂直スクロールバーを作成
-        self.rightVScroll = Scrollbar(self.rightFrame, orient=tk.VERTICAL, command=self.rightCanvas.yview)
-        self.rightVScroll.grid(row=0, column=1, sticky="ns")
-        # 水平スクロールバーを作成
-        self.rightHScroll = Scrollbar(self.rightFrame, orient=tk.HORIZONTAL, command=self.rightCanvas.xview)
-        self.rightHScroll.grid(row=1, column=0, sticky="ew")
-        # キャンバスにスクロールバーを設定
-        self.rightFrame.grid_rowconfigure(0, weight=1)
-        self.rightFrame.grid_columnconfigure(0, weight=1)
-        self.rightCanvas.config(xscrollcommand=self.rightHScroll.set, yscrollcommand=self.rightVScroll.set)
+        pdfCanvas.configure(xscrollcommand=HScroll.set, yscrollcommand=VScroll.set)
+        pdfCanvas.setScrollBar(VScroll, HScroll)
+        return pdfCanvas
 
     #矩形の位置が決定したときに呼び出される関数
     def PointRec(self, canvas : PDFCanvas, nPage, recPoints : fitz.Rect, text):

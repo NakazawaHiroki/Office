@@ -1,27 +1,26 @@
 import tkinter as tk
 from tkinter import Frame, Canvas, Scrollbar
 
-class MultiLineLB(Frame):
-    def __init__(self, parent, width, height, *args, **kwargs):
+class MultiLineLB(tk.Frame):
+    def __init__(self, parent, width, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.bNeedScrl      = False
         self.items          = []
         self.selected_item  = None
-    
-        self.config(width=width, height=height)
-        self.pack_propagate(False)  # サイズが自動的に調整されないようにする
-        self.pack()  # フレームを親ウィジェットに配置
+
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
         # Canvas and Scrollbar initialization
-        self.canvas = Canvas(self, bg="white")
+        self.canvas = Canvas(self, bg="white", width=width)
+        self.canvas.grid(row=0, column=0, sticky="nsew")
+
         self.scrollbar = Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.scrollbar.grid(row=0, column=1, sticky="ns")
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        # Internal frame to hold the content
+
         self.inner_frame = Frame(self.canvas, bg="white")
-        # Creating a window inside the canvas to place the inner frame
-        self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw", width=width)
-        # Packing widgets
-        self.scrollbar.pack(side="right", fill="y")
-        self.canvas.pack(side="left", fill="both", expand=True)
+        self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw")
     
     #アイテムの個数
     def getItemCount(self):
@@ -30,12 +29,20 @@ class MultiLineLB(Frame):
     def addItem(self, *texts):
         # Add a new label with the given texts to the inner frame, each text on a new line
         full_text = "\n".join(texts)
-        label = tk.Label(self.inner_frame, text=full_text, anchor="w", justify="left", bg="white", fg="black")
+        label = tk.Label(self.inner_frame,
+                        text=full_text,
+                        anchor="w",
+                        justify="left",
+                        bg="white",
+                        fg="black",
+                        width=self.canvas.winfo_width())
         label.default_color = "white"
         label.pack(anchor="nw", pady=1, fill="x")
+
         # Add a line below each item
-        line = tk.Frame(self.inner_frame, height=1, bg="black")
+        line = tk.Frame(self.inner_frame, height=1, bg="black", width=self.canvas.winfo_width())
         line.pack(fill="x", pady=0)
+
         # Add the label and line to the list
         self.items.append((label, line))
         # Bind right-click event to the label for selection
