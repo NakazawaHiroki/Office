@@ -22,11 +22,15 @@ class ClipboardImageApp:
 
         # 初期設定
         self.images = []  # 表示される画像のリスト（ImageTkオブジェクトを保持）
+        self.image_items = []  # Canvas内に配置された画像アイテムのリスト
         self.y_offset = 0  # 画像を積み重ねるためのY位置
         self.last_image_check = None
 
         # スクロール領域を更新
         self.canvas.bind("<Configure>", self.on_canvas_configure)
+
+        # 右クリックイベントをバインド
+        self.canvas.bind("<Button-3>", self.delete_image)
 
         # クリップボードの監視を開始
         self.check_clipboard()
@@ -46,7 +50,6 @@ class ClipboardImageApp:
                 if content != self.last_image_check:
                     self.last_image_check = content
                     self.add_image_to_canvas(content)
-
             # PNGファイルパスの場合
             elif isinstance(content, list) and len(content) > 0:
                 for file_path in content:
@@ -69,12 +72,41 @@ class ClipboardImageApp:
         self.images.append(tk_img)  # メモリ解放防止のため保持
 
         # Canvasに画像を描画
-        self.canvas.create_image(0, self.y_offset, anchor="nw", image=tk_img)
+        image_item = self.canvas.create_image(0, self.y_offset, anchor="nw", image=tk_img)
+        self.image_items.append(image_item)  # アイテムIDを保存
 
         # 次の画像のY位置を更新
         self.y_offset += img.height + 10
 
         # キャンバスの仮想サイズを拡張
+        self.canvas.config(scrollregion=(0, 0, self.canvas.winfo_width(), self.y_offset))
+
+    def delete_image(self, event):
+        """右クリックされた画像を削除"""
+        # クリック位置のキャンバスアイテムを取得
+        x, y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
+        clicked_item = self.canvas.find_closest(x, y)[0]
+
+        if clicked_item in self.image_items:
+            # 削除対象のアイテムをリストから削除
+            index = self.image_items.index(clicked_item)
+            self.image_items.pop(index)
+            self.images.pop(index)
+
+            # キャンバスからアイテムを削除
+            self.canvas.delete(clicked_item)
+
+            # 削除後の画像を再配置
+            self.relayout_images()
+
+    def relayout_images(self):
+        """画像を再配置"""
+        self.y_offset = 0
+        for item, img in zip(self.image_items, self.images):
+            self.canvas.coords(item, 0, self.y_offset)
+            self.y_offset += img.height() + 10
+
+        # キャンバスの仮想サイズを再設定
         self.canvas.config(scrollregion=(0, 0, self.canvas.winfo_width(), self.y_offset))
 
 

@@ -385,18 +385,15 @@ class CompareLedger(tk.Tk):
         height = max(image1.height, image2.height)
         image1 = image1.resize((int(image1.width * (height / image1.height)), height), Image.Resampling.LANCZOS)
         image2 = image2.resize((int(image2.width * (height / image2.height)), height), Image.Resampling.LANCZOS)
-
         # 画像を左右に結合
         total_width = image1.width + image2.width
         new_image = Image.new("RGB", (total_width, height))
         new_image.paste(image1, (0, 0))
         new_image.paste(image2, (image1.width, 0))
-
         output = io.BytesIO()
         new_image.save(output, format="BMP")  # BMP形式に変換
         data = output.getvalue()[14:]  # BMPヘッダーの先頭14バイトを除去
         output.close()
-
         # クリップボードを操作
         win32clipboard.OpenClipboard()
         win32clipboard.EmptyClipboard()
