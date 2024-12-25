@@ -21,7 +21,7 @@ BUTTON_CAPTION_SIZE     = 9
 BUTTON_CAPTION_FONT     = 'Arial'
 LABEL_TEXT_SIZE         = 9
 LABEL_TEXT_FONT         = 'Arial'
-MAT_LIST_WIDTH          = 150
+MAT_LIST_WIDTH          = 170
 
 ###################################################################
 
@@ -90,7 +90,7 @@ class CompareLedger(tk.Tk):
 
         #matファイルパス表示
         self.mat_entry = tk.Entry(matFrame, font=('Arial', 10))
-        self.mat_entry.grid(row=0, column=0, columnspan=2, padx=2, sticky="ew")
+        self.mat_entry.grid(row=0, column=0, columnspan=2, padx=2, pady=3, sticky="ew")
         #リストを全て削除するボタン
         btn  = Button(matFrame,  text="リセット", 
                       command=lambda: self.clearmat(), 
@@ -100,7 +100,7 @@ class CompareLedger(tk.Tk):
         btn  = Button(matFrame,  text=" ... ", 
                       command=lambda: self.selectmatfile(), 
                       font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        btn.grid(row=1, column=1, padx=5, pady=3, sticky="e")
+        btn.grid(row=1, column=1, padx=5, sticky="e")
 
         #マッチ情報リスト
         self.matLB = MultiLineLB(matFrame, MAT_LIST_WIDTH)
@@ -228,14 +228,18 @@ class CompareLedger(tk.Tk):
                                           self.transText(-1, text),
                                           texts[2], texts[3])
                     self.matlist.updateData(self.nextIdx, 0, nPage, recPoints)
-                    self.compareText(text, nPage, recPoints, self.first[3], self.first[1], self.first[2])
+                    bResult = self.compareText(text, nPage, recPoints, self.first[3], self.first[1], self.first[2])
+                    if not bResult:
+                        self.matLB.changeItemColor(self.nextIdx, CONST.COLOR_MIS)
                 else:
                     self.matLB.updateItem(self.nextIdx,
                                           texts[0], texts[1],
                                           self.pointText(nPage, recPoints),
                                           self.transText(-1, text))
                     self.matlist.updateData(self.nextIdx, 1, nPage, recPoints)
-                    self.compareText(self.first[3], self.first[1], self.first[2], text, nPage, recPoints)
+                    bResult = self.compareText(self.first[3], self.first[1], self.first[2], text, nPage, recPoints)
+                    if not bResult:
+                        self.matLB.changeItemColor(self.nextIdx, CONST.COLOR_MIS)
             else:
                 #対象のインデックスがアイテム数と同じは新規追加
                 if self.first[0] == self.leftCanvas:
@@ -298,7 +302,7 @@ class CompareLedger(tk.Tk):
                 parts = rectinfo.split(":")
                 nPage = int(parts[0].strip())
                 # 残りの部分をカンマで分割して、それぞれを浮動小数点数に変換
-                rect = [float(num.strip()) for num in parts[1].split(",")]
+                rect = [float(num.strip()) for num in parts[1].split("/")]
                 self.first = (firstCanvas, nPage, fitz.Rect(rect[0], rect[1], rect[2], rect[3]), text)
                 firstCanvas.changeRectColor(nPage, fitz.Rect(rect[0], rect[1], rect[2], rect[3]), CONST.COLOR_SEL)
                 #編集対象のインデックスを更新する削除した側のキャンバスを有効にして、反対を無効にする
@@ -318,26 +322,38 @@ class CompareLedger(tk.Tk):
         if spec == CONST.SR_COLOR:
             canv.changeRectColor(nPage, rect, val)
             if self.leftCanvas == canv:
-                nVersPage, rVersRect = self.matlist.getVersusData(0, nPage, rect)
-                if nVersPage is not None:
+                data = self.matlist.getVersusData(0, nPage, rect)
+                if data is not None:
+                    index, nVersPage, rVersRect = data
                     self.rightCanvas.changeRectColor(nVersPage, rVersRect, val)
+                    if val == CONST.COLOR_MATCH:
+                        self.matLB.changeItemColor(index, "white")
+                    else:
+                        self.matLB.changeItemColor(index, val)
             else:
-                nVersPage, rVersRect = self.matlist.getVersusData(1, nPage, rect)
-                if nVersPage is not None:
+                data = self.matlist.getVersusData(1, nPage, rect)
+                if data is not None:
+                    index, nVersPage, rVersRect = data
                     self.leftCanvas.changeRectColor(nVersPage, rVersRect, val)
+                    if val == CONST.COLOR_MATCH:
+                        self.matLB.changeItemColor(index, "white")
+                    else:
+                        self.matLB.changeItemColor(index, val)
         elif spec == CONST.SR_TAGORI:
             pass #既に変更されているのですることは無し
 
     #リストに表示するページ番号と座標情報の文字列を出力する
     def pointText(self, nPage, rect : fitz.Rect):
-        return f'{nPage}:{rect.x0}, {rect.y0}, {rect.x1}, {rect.y1}'
+        return f'{nPage} : {rect.x0} / {rect.y0} / {rect.x1} / {rect.y1}'
 
     #リストへ要素を追加する
     def addListBox(self, nleftPNum, leftRect : fitz.Rect, nrightPNum, rightRect : fitz.Rect, stLeft='', stRight=''):
         stleftpt = self.pointText(nleftPNum, leftRect)
         strightpt = self.pointText(nrightPNum,rightRect)
-        self.matLB.addItem(stleftpt, self.transText(-1, stLeft), strightpt, self.transText(-1, stRight))
-        self.compareText(stLeft, nleftPNum, leftRect, stRight, nrightPNum, rightRect)
+        index = self.matLB.addItem(stleftpt, self.transText(-1, stLeft), strightpt, self.transText(-1, stRight))
+        bResult = self.compareText(stLeft, nleftPNum, leftRect, stRight, nrightPNum, rightRect)
+        if not bResult:
+            self.matLB.changeItemColor(index, CONST.COLOR_MIS)
 
     #矩形で囲われた文字列を比較して一致なら矩形の線の色を変更する
     def compareText(self, text1, page1, rect1, text2, page2, rect2):
@@ -540,7 +556,9 @@ class CompareLedger(tk.Tk):
                 textL = self.leftCanvas.addRectangle(lp, lpoint[0], lpoint[1], lpoint[2], lpoint[3])
                 textR = self.rightCanvas.addRectangle(rp, rpoint[0], rpoint[1], rpoint[2], rpoint[3])
                 self.matLB.updateItem(i, self.pointText(lp, lpoint), self.transText(i, textL), self.pointText(rp, rpoint), self.transText(i, textR))
-                self.compareText(textL, lp, lpoint, textR, rp, rpoint)
+                bResult = self.compareText(textL, lp, lpoint, textR, rp, rpoint)
+                if not bResult:
+                    self.matLB.changeItemColor(i, CONST.COLOR_MIS)
 
             self.nextIdx = self.matlist.getDataCount() #反映が終わったら次のインデックスを更新する
             self.leftCanvas.updaterectIndex(self.nextIdx)
@@ -563,7 +581,12 @@ class CompareLedger(tk.Tk):
                     self.rightCanvas.addRectangle(rp, rpoint[0], rpoint[1], rpoint[2], rpoint[3])
                     texts = self.matLB.getItemText(i)
                     self.compareText(texts[1], lp, lpoint, texts[3], rp, rpoint)
+        #特別な矩形描画のリストを反映する
         self.updateSpecRect()
+        #現在仕掛中の矩形を選択表示にする
+        if self.first is not None:
+            canvas, nPage, recPoints, text = self.first
+            canvas.changeRectColor(nPage, recPoints, CONST.COLOR_SEL)
         #現在選択中のインデックスに直す
         canv.updaterectIndex(self.nextIdx)
 
@@ -573,13 +596,13 @@ class CompareLedger(tk.Tk):
             if spec == CONST.SR_COLOR:
                 canv.changeRectColor(nPage, rect, val)
                 if self.leftCanvas == canv:
-                    nVers = self.matlist.getVersusData(0, nPage, rect)
-                    if nVers is not None:
-                        self.rightCanvas.changeRectColor(nVers[0], nVers[1], val)
+                    data = self.matlist.getVersusData(0, nPage, rect)
+                    if data is not None:
+                        self.rightCanvas.changeRectColor(data[1], data[2], val)
                 else:
-                    nVers = self.matlist.getVersusData(1, nPage, rect)
-                    if nVers is not None:
-                        self.leftCanvas.changeRectColor(nVers[0], nVers[1], val)
+                    data = self.matlist.getVersusData(1, nPage, rect)
+                    if data is not None:
+                        self.leftCanvas.changeRectColor(data[1], data[2], val)
             elif spec == CONST.SR_TAGORI:
                 canv.moveNumberTag(nPage, rect, val)
 

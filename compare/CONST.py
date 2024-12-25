@@ -8,5 +8,5 @@ NUM_TAG_BOTTOM      = 3                 #番号タグを下に付ける
 NUM_TAG_LEFT        = 4                 #番号タグを左に付ける
 
 COLOR_SEL           = "royalblue"       #選択中の色
-COLOR_MIS           = 'red'         #不一致の要素
-COLOR_MATCH         = 'limegreen'   #一致の要素
+COLOR_MIS           = 'red'             #不一致の要素
+COLOR_MATCH         = 'limegreen'       #一致の要素

@@ -14,40 +14,29 @@ HEI_NUM             = 13                #番号の矩形の高さ
 WID_BTN             = 10                #閉じるマークの幅
 HEI_BTN             = 13                #閉じるマークの高さ
 
-def pdf_to_bmp(pdf_path, page_number):
-    # PDFを読み込み、指定ページを画像として抽出
-    pdf_document = fitz.open(pdf_path)
-    if page_number >= pdf_document.page_count:
-        return None
-    page = pdf_document.load_page(page_number)
-    pix = page.get_pixmap()
-    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-    print(f"Resolution: {pix.width}x{pix.height} pixels")  # 解像度を表示
-    return img, pdf_document, page, pix.width, pix.height, pdf_document.page_count
-
 ###################################################################
 # PDFCanvas
 ###################################################################
 class PDFCanvas(tk.Canvas):
     def __init__(self, parent, callback1, callback2, callback3, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.callPointRec           = callback1
-        self.callPointCancel        = callback2
-        self.callSpecRectinfo       = callback3
-        self.pdfPath                = ''
-        self.document               = None
-        self.page                   = None
-        self.pageNum                = 0
-        self.rect_id                = None
-        self.dctRectID              = {}
-        self.bEnable                = True
-        self.loadpdf                = False
-        self.nextIdx                = 0         #矩形のインデックスの次の番号
-        self.popup_menu             = None
-        self.selectRect : fitz.Rect = None      #現在選択中の矩形の座標
-        self.v_scroll : tk.Scrollbar   = None
-        self.h_scroll : tk.Scrollbar   = None
-        self.dragStart              = ()
+        self.callPointRec               = callback1
+        self.callPointCancel            = callback2
+        self.callSpecRectinfo           = callback3
+        self.pdfPath                    = ''
+        self.document                   = None
+        self.page                       = None
+        self.pageNum                    = 0
+        self.rect_id                    = None
+        self.dctRectID                  = {}
+        self.bEnable                    = True
+        self.loadpdf                    = False
+        self.nextIdx                    = 0         #矩形のインデックスの次の番号
+        self.popup_menu                 = None
+        self.selectRect : fitz.Rect     = None      #現在選択中の矩形の座標
+        self.v_scroll : tk.Scrollbar    = None
+        self.h_scroll : tk.Scrollbar    = None
+        self.dragStart                  = ()
 
         #イベントのバインド
         self.bind("<ButtonPress-1>", self.on_mouse_down)
@@ -56,12 +45,14 @@ class PDFCanvas(tk.Canvas):
         self.bind("<MouseWheel>", self.on_mousewheel)
         self.bind("<Shift-MouseWheel>", self.on_shift_mousewheel)
         self.bind("<Button-3>", self.on_right_click)
-        self.bind("<B3-Motion>", self.on_rightbtn_drag)
-        self.bind("<ButtonRelease-3>", self.on_rightbtn_release)
+        self.bind("<Button-2>", self.on_center_click)
+        self.bind("<B2-Motion>", self.on_centerbtn_drag)
+        self.bind("<ButtonRelease-2>", self.on_centerbtn_release)
         #クリックメニューを作成
         self.popup_menu = tk.Menu(self, tearoff=0)
         self.popup_menu.add_command(label="削除", command=self.on_delete_rect)
         self.popup_menu.add_command(label="一致にする", command=self.on_force_match)
+        self.popup_menu.add_command(label="不一致にする", command=self.on_force_missmatch)
         self.popup_menu.add_command(label="番号を上に付ける", command=self.on_move_number)
 
     #スクロールバーのセット
@@ -123,7 +114,6 @@ class PDFCanvas(tk.Canvas):
 
         self.loadpdf = True
         self.dctRectID.clear()
-        print(f"Resolution: {pix.width}x{pix.height} pixels")  # 解像度を表示
         return True
 
     #PDFファイルをロードしているかのフラグ
@@ -264,7 +254,6 @@ class PDFCanvas(tk.Canvas):
         #クリック座標から押されたボタンを検出する
         px = self.canvasx(event.x)
         py = self.canvasy(event.y)
-        self.dragStart = (event.x, event.y)
         for key, (idx, color, rectId, numId, btnID, numTextID, btnTextID) in self.dctRectID.items():
             coords1 = self.coords(numId)
             nx1, ny1, nx2, ny2 = coords1
@@ -275,16 +264,21 @@ class PDFCanvas(tk.Canvas):
                 self.selectRect = key
                 break
 
-    def on_rightbtn_drag(self, event):
+    #ホイールボタンをクリック
+    def on_center_click(self, event):
         if self.page is not None:
             event.widget.config(cursor="hand2")
+            self.dragStart = (event.x, event.y)
+    #ホイールボタンのドラッグ中
+    def on_centerbtn_drag(self, event):
+        if self.page is not None:
             delta_x = event.x - self.dragStart[0]
             delta_y = event.y - self.dragStart[1]
             self.xview_scroll(-int(delta_x / 4), "units")  # 水平方向にスクロール
             self.yview_scroll(-int(delta_y / 4), "units")  # 垂直方向にスクロール
             self.dragStart = (event.x, event.y)
-
-    def on_rightbtn_release(self, event):
+    #ホイールボタンのリリース
+    def on_centerbtn_release(self, event):
         event.widget.config(cursor="arrow")
 
     #ポップアップメニューの削除を選択
@@ -299,7 +293,10 @@ class PDFCanvas(tk.Canvas):
     def on_force_match(self):
         if self.selectRect is not None:
             self.callSpecRectinfo(self, self.pageNum, self.selectRect, CONST.SR_COLOR, CONST.COLOR_MATCH)
-
+    #ポップアップメニューの強制的に不一致にするを選択
+    def on_force_missmatch(self):
+        if self.selectRect is not None:
+            self.callSpecRectinfo(self, self.pageNum, self.selectRect, CONST.SR_COLOR, CONST.COLOR_MIS)
     #ポップアップメニュー番号ラベルを下に付ける
     def on_move_number(self):
         if self.selectRect is not None:

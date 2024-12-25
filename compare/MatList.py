@@ -94,7 +94,7 @@ class MatList:
     def getVersusData(self, nSide, nPage, rect : fitz.Rect):
         searchinfo = {}
         result = {}
-        for mat in self.mats:
+        for index, mat in enumerate(self.mats, start=0):
             if nSide == 0:
                 searchinfo = mat[LKEY]
                 result = mat[RKEY]
@@ -104,5 +104,5 @@ class MatList:
             if searchinfo[PKEY] == nPage and \
                 searchinfo[XORI] == rect.x0 and searchinfo[YORI] == rect.y0 and \
                 searchinfo[XEND] == rect.x1 and searchinfo[YEND] == rect.y1:
-                return result[PKEY], fitz.Rect(result[XORI],result[YORI],result[XEND],result[YEND])
+                return index, result[PKEY], fitz.Rect(result[XORI],result[YORI],result[XEND],result[YEND])
         return None
