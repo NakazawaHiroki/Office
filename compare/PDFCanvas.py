@@ -273,9 +273,9 @@ class PDFCanvas(tk.Canvas):
     def on_centerbtn_drag(self, event):
         if self.page is not None:
             delta_x = event.x - self.dragStart[0]
-            delta_y = event.y - self.dragStart[1]
+            # delta_y = event.y - self.dragStart[1]
             self.xview_scroll(-int(delta_x / 4), "units")  # 水平方向にスクロール
-            self.yview_scroll(-int(delta_y / 4), "units")  # 垂直方向にスクロール
+            # self.yview_scroll(-int(delta_y / 4), "units")  # 垂直方向にスクロール
             self.dragStart = (event.x, event.y)
     #ホイールボタンのリリース
     def on_centerbtn_release(self, event):
