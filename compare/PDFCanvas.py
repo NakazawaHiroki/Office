@@ -23,14 +23,12 @@ class PDFCanvas(tk.Canvas):
         self.callPointRec               = callback1
         self.callPointCancel            = callback2
         self.callSpecRectinfo           = callback3
-        self.pdfPath                    = ''
         self.document                   = None
         self.page                       = None
         self.pageNum                    = 0
         self.rect_id                    = None
         self.dctRectID                  = {}
         self.bEnable                    = True
-        self.loadpdf                    = False
         self.nextIdx                    = 0         #矩形のインデックスの次の番号
         self.popup_menu                 = None
         self.selectRect : fitz.Rect     = None      #現在選択中の矩形の座標
@@ -84,7 +82,7 @@ class PDFCanvas(tk.Canvas):
             self.removeRect(self.page, rect, True)
         self.dctRectID.clear()
 
-    #pdfのロード、bOpenは初めてPDFファイルを開いた
+    #pdfのロード documentとnPageが初期値の時は初めてファイルを開いたことになる
     def load_pdf(self, pdf_path, document = None, nPage = 1):
         # PDFを読み込み、指定ページを画像として抽出
         if pdf_path is not None:
@@ -93,7 +91,6 @@ class PDFCanvas(tk.Canvas):
             doc = fitz.open(pdf_path)
             if doc:
                 self.document = doc
-                self.pdfPath = pdf_path
             else:
                 return False
         if nPage > self.document.page_count:
@@ -111,8 +108,6 @@ class PDFCanvas(tk.Canvas):
         self.img_tk = ImageTk.PhotoImage(img)
         self.create_image(0, 0, anchor="nw", image=self.img_tk)
         self.config(scrollregion=(0, 0, pix.width, pix.height))
-
-        self.loadpdf = True
         self.dctRectID.clear()
         return True
 
