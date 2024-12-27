@@ -21,6 +21,12 @@ class MultiLineLB(tk.Frame):
 
         self.inner_frame = Frame(self.canvas, bg="white")
         self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw")
+        
+        self.bind("<Configure>", self.on_frame_resize)
+
+    #フレームサイズが変更された時に呼ばれる
+    def on_frame_resize(self, event):
+        self._check_need_scroll()
     
     #アイテムの個数
     def getItemCount(self):

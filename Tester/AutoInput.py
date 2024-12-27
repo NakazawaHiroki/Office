@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import Frame, Scrollbar, Button, filedialog, messagebox
 from openpyxl import load_workbook
+import platform
+import subprocess
 
 import threading
 from enum import IntEnum, auto
@@ -199,6 +201,22 @@ class AutoInput:
 
         #レジストリに今の情報を保存
         self.saveRegistry()
+
+    #エクセルで開く
+    def openExcel(self):
+        file_path = self.filepath_entry.get()
+        if file_path != "":
+            try:
+                if platform.system() == "Windows":
+                    os.startfile(file_path)  # Windowsの場合
+                elif platform.system() == "Darwin":  # macOS
+                    subprocess.run(["open", file_path])
+                else:  # Linux
+                    subprocess.run(["xdg-open", file_path])
+                print(f"Opened {file_path} with default application.")
+            except Exception as e:
+                print(f"Error opening file: {e}")
+
 
 
     def open_file(self):
@@ -549,19 +567,25 @@ class AutoInput:
 
         # ファイルパス表示用のテキストボックス
         self.filepath_entry = tk.Entry(main_frame, width=75)
-        self.filepath_entry.place(x=420, y=10)
+        self.filepath_entry.place(x=420, y=3)
 
         reloadButton = Button(main_frame, text="読込み", 
                                  command=lambda: self.reloadTestData(), 
                                  bg="yellow", font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
-        reloadButton.place(x=880, y=25)
+        reloadButton.place(x=925, y=0)
         self.lockWidget.append(reloadButton)
+
+        excelButton = Button(main_frame, text="エクセル...", 
+                                 command=lambda: self.openExcel(), 
+                                 bg="lightgreen", font=(BUTTON_CAPTION_FONT, BUTTON_CAPTION_SIZE))
+        excelButton.place(x=975, y=0)
+        self.lockWidget.append(excelButton)
 
         #ドライバー、ブラウザーのバージョンを表示する
         bver = self.browStrategy.getBrowserVer()
         dver = self.browStrategy.getDriverVer()
         self.versionLabel = tk.Label(main_frame, text=f'ブラウザVer:{bver}\nドライバVer:{dver}', width=40, font=(LABEL_TEXT_FONT, LABEL_TEXT_SIZE), anchor="w")
-        self.versionLabel.place(x=940, y=0)
+        self.versionLabel.place(x=940, y=45)
 
     #サブフレームとスクロールバーの作成
     def createFrame(self, main_frame):
