@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GoogleMap, OverlayView, useLoadScript } from '@react-google-maps/api';
-import locations from './locations';
+import locationsData from './locations';
 
 // Googleマップのスタイル
 const mapContainerStyle = {
@@ -51,10 +51,10 @@ const triangleStyle = {
 
 const MapComponent = () => {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: '__________Google_API_KEY_____________'
+    googleMapsApiKey: '_____google_map__key___'
   });
 
-  const [locations, ] = useState(locations);
+  const [locations, ] = useState(locationsData);
 
   if (loadError) return <div>マップのロードエラーです。</div>;
   if (!isLoaded) return <div>マップを読み込み中...</div>;
