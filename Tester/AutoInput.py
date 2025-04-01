@@ -10,6 +10,7 @@ from CellCanvas import CellCanvas
 from EdgeStrategy import EdgeStrategy
 import CONST
 import os
+import webbrowser
 
 ###################################################################
 #   アプリケーション定数
@@ -57,7 +58,6 @@ class AutoInput:
         self.runThread                      = None
         self.colCount                       = 0
         self.lockWidget                     = []
-        self.versionLabel                   = None
 
         # メインフレームを作成
         main_frame = Frame(root)
@@ -73,9 +73,6 @@ class AutoInput:
         #マウスのホイールボタンイベント
         main_frame.bind_all("<MouseWheel>", self.on_MouseWheelRotate)
         main_frame.bind_all("<Shift-MouseWheel>", self.on_MouseWheelRotateShift)
-
-        #ファイルのロードとリストの作成
-        # self.reloadTestData()
 
 
     def load_excel_data(self, filepath, excluded_columns=None):
@@ -584,8 +581,19 @@ class AutoInput:
         #ドライバー、ブラウザーのバージョンを表示する
         bver = self.browStrategy.getBrowserVer()
         dver = self.browStrategy.getDriverVer()
-        self.versionLabel = tk.Label(main_frame, text=f'ブラウザVer:{bver}\nドライバVer:{dver}', width=40, font=(LABEL_TEXT_FONT, LABEL_TEXT_SIZE), anchor="w")
-        self.versionLabel.place(x=940, y=45)
+        versionLabel_bro = tk.Label(main_frame, text=f'ブラウザVer:{bver}', width=23, font=(LABEL_TEXT_FONT, LABEL_TEXT_SIZE), anchor="w")
+        versionLabel_bro.place(x=880, y=40)
+        versionLabel_drv = tk.Label(main_frame, text=f'ドライバVer:{dver}', 
+                                    width=23, 
+                                    fg="blue", 
+                                    cursor="hand2", 
+                                    font=(LABEL_TEXT_FONT, LABEL_TEXT_SIZE, "underline"), anchor="w")
+        versionLabel_drv.place(x=880, y=58)
+        versionLabel_drv.bind("<Button-1>", self.open_url)
+
+    #ドライバーのダウンロードリンク
+    def open_url(self, event):
+        webbrowser.open("https://developer.microsoft.com/microsoft-edge/tools/webdriver/")
 
     #サブフレームとスクロールバーの作成
     def createFrame(self, main_frame):

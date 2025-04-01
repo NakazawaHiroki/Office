@@ -1,0 +1,10 @@
+@startuml シングルサインオン
+Title シングルサインオン
+Top21.asp -> Gw_Task_SSO.asp: mode=open
+Gw_Task_SSO.asp -> zaimuSSOParam.inc: 設定値を読込み
+Gw_Task_SSO.asp -> jwt.asp: 値を指定(JSON)
+return jwt文字列を返却(JSON)
+Gw_Task_SSO.asp -> account_controller: URL*1を実行(別タブで表示)
+account_controller -> 次世代Taskシステム: リダイレクト
+account_controller -> Gw_Task_SSO.asp: 結果
+@enduml

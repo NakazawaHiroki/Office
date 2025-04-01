@@ -6,6 +6,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import WebDriverException
+
+from bs4 import BeautifulSoup
 import os
 
 import CONST
@@ -244,9 +247,19 @@ class EdgeStrategy:
             elif tagType == "select":
                 try:
                     select = Select(element)
+                    if value == 'clear':
+                        value = ''
                     select.select_by_visible_text(value)
                 except NoSuchElementException:
                     return CONST.RES_NO_SUCH_SELECT
+            elif tagType == "checkbox":
+                try:
+                    element = WebDriverWait(self.EdgeD, 10).until(EC.element_to_be_clickable((By.ID, tagID)))
+                except TimeoutException:
+                    return CONST.RES_TAGTYPE_ERROR
+                # 要素が画面に表示されるようにスクロール
+                self.EdgeD.execute_script("arguments[0].scrollIntoView(true);", element)                    
+                element.click()
             elif tagType == "button":
                 try:
                     element = WebDriverWait(self.EdgeD, 10).until(EC.element_to_be_clickable((By.ID, tagID)))
@@ -359,9 +372,21 @@ class EdgeStrategy:
     def enumInputTag(self, type):
         return self.EdgeD.find_elements(By.XPATH, f'//input[@type=\'{type}\']')
 
+    #<textarea>タグを列挙する
+    def enumTextAreaTag(self):
+        return self.EdgeD.find_elements(By.TAG_NAME, "textarea")
+
     #<select>タグを列挙する
     def enumSelectTag(self):
         return self.EdgeD.find_elements(By.TAG_NAME, "select")
+    
+    #全てのタグを列挙する
+    def enumTag(self):
+        # WebDriverWait(self.EdgeD, 10).until(lambda d: d.execute_script("return document.readyState") == "complete")
+        html = self.EdgeD.page_source
+        soup = BeautifulSoup(html, 'html.parser')
+        all_tags = soup.find_all()
+        return all_tags
 
     #ブラウザ情報の取得
     def getOpenURL(self):
@@ -373,8 +398,13 @@ class EdgeStrategy:
     def getOpenLedger(self):
         return self.openLedgerID
     def IsBrowserOpen(self):
-        if self.EdgeD.session_id is not None:
-            return True
+        if self.EdgeD is not None:
+            if self.EdgeD.session_id is not None:
+                try:
+                    if len(self.EdgeD.window_handles) > 0:
+                        return True
+                except WebDriverException:
+                    return False
         return False
     def getBrowserVer(self):
         result = get_edge_version()

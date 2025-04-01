@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        // Chromeブラウザを起動してhttp://localhost:3000に接続
+        "type": "chrome",
+        "request": "launch",
+        "name": "ChromeでReactデバッグ",
+        "url": "http://localhost:3000",
+        "webRoot": "${workspaceFolder}/src"
+      }
+    ]
+  }
+  

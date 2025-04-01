@@ -4,21 +4,27 @@ import re
 from selenium.webdriver.common.by import By
 import os
 
+SourceFile = "C:/development/Dugong/検査情報_ホクト/ホクト.xlsx"
+
+ExtURL = "http://10.150.80.41:83/dwf-web/login/init"
+ExtID = "densan"
+ExtPW = "densan"
+LedgerID = "90005"
+#横幅の最大サイズ
+LIMIT_XPOINT = 700.0
+
 g_SelectLists = []
 
-#指定されたY座標とアイテムの高さのタグ情報を取得する
-#X座標で昇順ソートして返却する
-def getTagList(strategy, toppoint, tagHeight):
+top_value_regex = re.compile(r"top: \s*([^;]+);")
+height_value_regex = re.compile(r"height: \s*([^;]+);")
+left_value_regex = re.compile(r"left: \s*([^;]+);")
+
+
+def extractButton(strategy, toppoint, tagHeight, elements):
     taglist = []
-    top_value_regex = re.compile(r"top: \s*([^;]+);")
-    height_value_regex = re.compile(r"height: \s*([^;]+);")
-    left_value_regex = re.compile(r"left: \s*([^;]+);")
     top = ''
     height = ''
     left = ''
-
-    #ボタン要素を取得する
-    elements = strategy.enumInputTag('button')
     for elem in elements:
         try:
             style = elem.get_attribute("style")
@@ -26,13 +32,18 @@ def getTagList(strategy, toppoint, tagHeight):
                 top = top_value_regex.search(style).group(1)
                 height = height_value_regex.search(style).group(1)
                 left = left_value_regex.search(style).group(1)
-                if top == toppoint and height == tagHeight and float(left.replace('mm', '')) < 550.0:
+                if top == toppoint and height == tagHeight and float(left.replace('mm', '')) < LIMIT_XPOINT:
                     taglist.append([top, height, left, elem.get_attribute("id"), 'button', ''])
         except:
             continue
+    return taglist
 
-    #text要素を取得する
-    elements = strategy.enumInputTag('text')
+#チェックボックス要素を取得す
+def extractCheckButton(strategy, toppoint, tagHeight, elements):
+    taglist = []
+    top = ''
+    height = ''
+    left = ''
     for elem in elements:
         try:
             style = elem.get_attribute("style")
@@ -40,16 +51,40 @@ def getTagList(strategy, toppoint, tagHeight):
                 top = top_value_regex.search(style).group(1)
                 height = height_value_regex.search(style).group(1)
                 left = left_value_regex.search(style).group(1)
-                if top == toppoint and height == tagHeight and float(left.replace('mm', '')) < 550.0:
+                if top == toppoint and height == tagHeight and float(left.replace('mm', '')) < LIMIT_XPOINT:
+                    taglist.append([top, height, left, elem.get_attribute("id"), 'checkbox', ''])
+        except:
+            continue
+    return taglist
+
+#text要素を取得する
+def extractText(strategy, toppoint, tagHeight, elements):
+    taglist = []
+    top = ''
+    height = ''
+    left = ''
+    for elem in elements:
+        try:
+            style = elem.get_attribute("style")
+            if style and "top:" in style:
+                top = top_value_regex.search(style).group(1)
+                height = height_value_regex.search(style).group(1)
+                left = left_value_regex.search(style).group(1)
+                if top == toppoint and height == tagHeight and float(left.replace('mm', '')) < LIMIT_XPOINT:
                     if elem.get_attribute('readonly') is None:
                         taglist.append([top, height, left, elem.get_attribute("id"), 'text', ''])
                     else:
                         taglist.append([top, height, left, elem.get_attribute("id"), 'readonly', ''])
         except:
             continue
+    return taglist
 
-    #選択リストを取得する
-    elements = strategy.enumSelectTag()
+#text要素を取得する
+def extractTextArea(strategy, toppoint, tagHeight, elements):
+    taglist = []
+    top = ''
+    height = ''
+    left = ''
     for elem in elements:
         try:
             style = elem.get_attribute("style")
@@ -57,7 +92,29 @@ def getTagList(strategy, toppoint, tagHeight):
                 top = top_value_regex.search(style).group(1)
                 height = height_value_regex.search(style).group(1)
                 left = left_value_regex.search(style).group(1)
-                if top == toppoint and height == tagHeight and float(left.replace('mm', '')) < 550.0:
+                if top == toppoint and height == tagHeight and float(left.replace('mm', '')) < LIMIT_XPOINT:
+                    if elem.get_attribute('readonly') is None:
+                        taglist.append([top, height, left, elem.get_attribute("id"), 'textarea', ''])
+                    else:
+                        taglist.append([top, height, left, elem.get_attribute("id"), 'readonly', ''])
+        except:
+            continue
+    return taglist
+
+#選択リストを取得する
+def extractSelects(strategy, toppoint, tagHeight, elements):
+    taglist = []
+    top = ''
+    height = ''
+    left = ''
+    for elem in elements:
+        try:
+            style = elem.get_attribute("style")
+            if style and "top:" in style:
+                top = top_value_regex.search(style).group(1)
+                height = height_value_regex.search(style).group(1)
+                left = left_value_regex.search(style).group(1)
+                if top == toppoint and height == tagHeight and float(left.replace('mm', '')) < LIMIT_XPOINT:
                     #optionsのリストを抽出する
                     optionval = []
                     options = elem.find_elements(By.TAG_NAME, "option")
@@ -69,17 +126,12 @@ def getTagList(strategy, toppoint, tagHeight):
                         g_SelectLists.append(optionval)
         except:
             continue
-
-    #X座標でソートする
-    result = sorted(taglist, key=lambda x: float(x[2].replace('mm', '')))
-
-    return result
+    return taglist
 
 
 
 #エクセルファイルをロードする
-file_path = "C:/development/Dugong/tool/Tester/Iz_出勤簿テスト.xlsx"
-wb = load_workbook(file_path, data_only=True)
+wb = load_workbook(SourceFile, data_only=True)
 sheet = wb.active
 initData = []
 
@@ -95,11 +147,9 @@ for row in sheet.iter_rows(min_row=2, max_col=9, values_only=True):
 #ブラウザを開く
 strategy = EdgeStrategy()
 strategy.initDriver()
-strategy.openNewLedger("http://10.150.16.158:84/dwf-web/login/init",
-                        "densan",
-                        "densan",
-                        "159005")
-
+strategy.accessURL(ExtURL)
+strategy.login(ExtID, ExtPW)
+strategy.openNewLedger(LedgerID)
 
 #ブラウザから抽出する
 outputList = []
@@ -108,13 +158,21 @@ topPoint = ''
 tagHeight = ''
 taglistindex = 0
 alertFlug = False
+
+#各要素を取得する
+btnTags = strategy.enumInputTag('button')
+checkBoxTags = strategy.enumInputTag('checkbox')
+textTags = strategy.enumInputTag('text')
+textAreaTags = strategy.enumTextAreaTag()
+selecttags = strategy.enumSelectTag()
+
 for i, row in enumerate(initData, start=1):
     if alertFlug:
         outputList.append(row)  #警告が出ているから以降は元リストのコピー
         continue
-
-    if row[3] != '' and row[3] != topPoint: #Y座標の指定が異なる
-        #これまでのタグリストとエクセルで予約されているスペースの数がことなるかチェックする
+    #エクセルのY座標指定が空欄でない、現在ブラウザから抽出しているY座標か高さが不一致ならば次の抽出条件がきた
+    if row[3] != '' and (row[3] != topPoint or row[4] != tagHeight):
+        #これまでのタグリストとエクセルで予約されているスペースの数が異なるかチェックする
         if len(tagInfoList) > 0 and taglistindex != len(tagInfoList):
             print('エクセルで予約されている行数と異なります')
             alertFlug = True
@@ -124,19 +182,30 @@ for i, row in enumerate(initData, start=1):
             #'-'が指定されているところは見出しみたいなものなのでコピーだけ
             outputList.append(row)
             continue
+
         #タグ要素を抽出
         taglistindex = 0
         topPoint = row[3]
         tagHeight = row[4]
         print(f'Y座標:{topPoint}  高さ:{tagHeight} のタグを抽出')
-        tagInfoList = getTagList(strategy, topPoint, tagHeight)
+
+        taglist = extractButton(strategy, topPoint, tagHeight, btnTags)
+        taglist += extractCheckButton(strategy, topPoint, tagHeight, checkBoxTags)
+        taglist += extractText(strategy, topPoint, tagHeight, textTags)
+        taglist += extractTextArea(strategy, topPoint, tagHeight, textAreaTags)
+        taglist += extractSelects(strategy, topPoint, tagHeight, selecttags)
+
+        #X座標でソートする
+        tagInfoList = sorted(taglist, key=lambda x: float(x[2].replace('mm', '')))
+
         if len(tagInfoList) == 0:
             print('エクセルで予約されている行数と異なります')
             alertFlug = True
             outputList.append(row)  #警告が出ているから以降は元リストのコピー
             continue
         print('タグの個数は: ' + str(len(tagInfoList)))
-
+    
+    #配列サイズとインデックス番号が同数なのは範囲外エラーになるので終了
     if taglistindex == len(tagInfoList):
         print('エクセルで予約されている行数と異なります')
         alertFlug = True
@@ -162,7 +231,7 @@ for i, options in enumerate(g_SelectLists, start=1):
         selectsheet.cell(row=j, column=i, value=option)
 
 # Excelファイルを別名で保存
-file_root, file_ext = os.path.splitext(file_path)
+file_root, file_ext = os.path.splitext(SourceFile)
 # '_Ext'を拡張子の前に追加した新しいファイル名を作成
 new_file_path = f"{file_root}_Ext{file_ext}"
 # 必要な操作を行う（ここでは既存のデータを書き換えないまま保存）

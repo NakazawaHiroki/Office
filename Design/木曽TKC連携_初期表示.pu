@@ -1,0 +1,18 @@
+@startuml 初期表示
+Title 初期表示
+Top21.asp -> Gw_Task_SSO.asp: mode=unprocessed
+Gw_Task_SSO.asp -> zaimuSSOParam.inc: 設定値を読込み
+Gw_Task_SSO.asp -> jwt.asp: 値を指定(JSON)
+return jwt文字列を返却(JSON)
+alt 団体認証キー無し
+    Gw_Task_SSO.asp -> Task: 次世代TASKシステムの接続先+\n団体コード+\nユーザID
+else 団体認証キー有り
+    Gw_Task_SSO.asp -> Task: 次世代TASKシステムの接続先+\n団体認証キー+\n団体コード+\nユーザID
+end
+Task -> Gw_Task_SSO.asp: レスポンス
+alt 成功
+    Gw_Task_SSO.asp -> Gw_Task_SSO.asp: 未処理件数を表示
+else エラー
+    Gw_Task_SSO.asp -> Gw_Task_SSO.asp: 「未処理件数の取得に失敗しました」と表示
+end
+@enduml
