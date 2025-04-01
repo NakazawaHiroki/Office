@@ -11,7 +11,7 @@ const mapContainerStyle = {
 // マップの初期表示位置（東京駅の座標）
 const center = { lat: 35.681236, lng: 139.767125 };
 
-// 各場所の座標と、表示する吹き出しのメッセージ
+// // 各場所の座標と、表示する吹き出しのメッセージ
 const locations = [
   { position: { lat: 35.681236, lng: 139.767125 }, message: '東京駅' },
   { position: { lat: 35.6595,  lng: 139.7005   }, message: '渋谷スクランブル交差点' },
@@ -35,7 +35,7 @@ const MapComponent = () => {
 
   // Googleマップのスクリプトを非同期ロード
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: 'AIzaSyBThVJZtvyxFt4NopZvau5yjyH7iplF1TA'
+    googleMapsApiKey: '__________Google_API_KEY_____________'
   });
 
   // InfoWindow（吹き出し）が表示されたタイミングで呼ばれる

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { GoogleMap, OverlayView, useLoadScript } from '@react-google-maps/api';
+import locations from './locations';
 
 // Googleマップのスタイル
 const mapContainerStyle = {
@@ -11,11 +12,11 @@ const mapContainerStyle = {
 const center = { lat: 35.681236, lng: 139.767125 };
 
 // state管理の位置データ
-const initialLocations = [
-  { id: 1, position: { lat: 35.681236, lng: 139.767125 }, message: '東京駅' },
-  { id: 2, position: { lat: 35.6595, lng: 139.7005 }, message: '渋谷交差点' },
-  { id: 3, position: { lat: 35.6586, lng: 139.7454 }, message: '東京タワー' }
-];
+// const initialLocations = [
+//   { id: 1, position: { lat: 35.681236, lng: 139.767125 }, message: '東京駅' },
+//   { id: 2, position: { lat: 35.6595, lng: 139.7005 }, message: '渋谷交差点' },
+//   { id: 3, position: { lat: 35.6586, lng: 139.7454 }, message: '東京タワー' }
+// ];
 
 // Googleマップのオプション（不要なUIを非表示）
 const options = {
@@ -50,10 +51,10 @@ const triangleStyle = {
 
 const MapComponent = () => {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: 'AIzaSyBThVJZtvyxFt4NopZvau5yjyH7iplF1TA'
+    googleMapsApiKey: '__________Google_API_KEY_____________'
   });
 
-  const [locations, ] = useState(initialLocations);
+  const [locations, ] = useState(locations);
 
   if (loadError) return <div>マップのロードエラーです。</div>;
   if (!isLoaded) return <div>マップを読み込み中...</div>;
