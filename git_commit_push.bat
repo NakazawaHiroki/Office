@@ -33,7 +33,7 @@ git commit -m "%COMMIT_MESSAGE%"
 
 REM プッシュ
 echo Pushing to the remote repository...
-git push
+git push origin main --force
 
 REM 終了メッセージ
 IF ERRORLEVEL 0 (
