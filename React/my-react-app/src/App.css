@@ -42,33 +42,3 @@ html, body, #root {
   margin: 0;
   padding: 0;
 }
-
-/* 吹き出し内メッセージの基本スタイル */
-.infoWindowMessage {
-  font-size: 16px;
-  line-height: 1;
-  margin: 0;
-  padding: 0;
-}
-
-/* レスポンシブ対応 */
-@media screen and (max-width: 768px) {
-  .infoWindowMessage {
-    font-size: 20px;
-  }
-}
-
-@media screen and (max-width: 480px) {
-  .infoWindowMessage {
-    font-size: 24px;
-  }
-}
-
-/* 閉じるボタン非表示 */
-.gm-ui-hover-effect {
-  display: none !important;
-}
-
-.gm-style-iw, .gm-style-iw-c {
-  pointer-events: none !important;
-}
