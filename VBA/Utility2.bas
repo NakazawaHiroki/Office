@@ -12,7 +12,7 @@ Attribute VB_Name = "Utility"
 Function GetFilePath_util(target As Range, msg As String) As String
     Dim path As String
     Dim fso As Object
-    path = target.Value
+    path = target.value
     If path = "" Then
         MsgBox msg & "の指定がありません"
         GetFilePath_util = ""
@@ -56,7 +56,7 @@ Function SelectXLSXFile_util(targetRange As Range, dialogTitle As String)
         If .Show = -1 Then  ' ユーザーがファイルを選択した場合
             selectedFilePath = .SelectedItems(1)
             ' 選択されたファイルパスを指定されたセルに表示
-            targetRange.Value = selectedFilePath
+            targetRange.value = selectedFilePath
         End If
     End With
     
@@ -91,7 +91,7 @@ Function SelectCSVFile_util(targetRange As Range, dialogTitle As String, onlyCSV
         If .Show = -1 Then  ' ユーザーがファイルを選択した場合
             selectedFilePath = .SelectedItems(1)
             ' 選択されたファイルパスを指定されたセルに表示
-            targetRange.Value = selectedFilePath
+            targetRange.value = selectedFilePath
         End If
     End With
     
@@ -159,14 +159,14 @@ Function SelectMultipleFiles_util(targetRange As Range, Optional addCSVFilter As
         ' ダイアログを表示し、選択されたファイルを取得
         If .Show = -1 Then
             ' 選択されたファイルパスを指定したセル範囲に表示
-            If targetRange.count < .SelectedItems.count Then
+            If targetRange.Count < .SelectedItems.Count Then
                 MsgBox "選択したセルよりもファイル数が多いです " & targetRange.address
                 Set fd = Nothing
                 Exit Function
             End If
             targetRange.ClearContents  ' 範囲をクリア
-            For i = 1 To .SelectedItems.count
-                targetRange.Cells(i, 1).Value = .SelectedItems(i)
+            For i = 1 To .SelectedItems.Count
+                targetRange.Cells(i, 1).value = .SelectedItems(i)
             Next i
         End If
     End With
@@ -180,15 +180,15 @@ End Function
 ' filePath: ＣＳＶファイルのパス
 ' Return: Collectionオブジェクト ファイルが無い、読めない時はNothingを返却します
 '===============================================================================
-Function LoadCSV_util(filePath As String) As collection
+Function LoadCSV_util(filePath As String) As Collection
     Dim csvFile As Object
     Dim line As String
     Dim lineArray As Variant
-    Dim rowCollection As collection
+    Dim rowCollection As Collection
     Dim fso As Object
     
     ' Collectionオブジェクトの初期化
-    Set rowCollection = New collection
+    Set rowCollection = New Collection
     
     ' ファイルシステムオブジェクトの作成
     Set fso = CreateObject("Scripting.FileSystemObject")
@@ -220,6 +220,63 @@ Function LoadCSV_util(filePath As String) As collection
     Set LoadCSV_util = rowCollection
 End Function
 
+'===============================================================================
+' シートから指定されたふたつの列をキーと値としてDictionary型で返却する
+' sheetName: 読込先のシート名
+' startRow: 読み込みを開始する行番号
+' keyColumn: キーとなるセルの列番号
+' valueColumn: 値となるセルの列番号
+' Return: Dictionary型で返却する、シートが無いときはNotihngを返却する
+'===============================================================================
+Function GetDictiFromSheet_util(sheetName As String, startRow As Long, keyColumn As Long, valueColumn As Long) As Object
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim dataArr As Variant
+    Dim rowDict As Object
+    Dim i As Long
+    Dim key As Variant
+    Dim value As Variant
+    
+    ' ---- 初期化 ----
+    Set rowDict = CreateObject("Scripting.Dictionary")
+    
+    ' ---- シートの存在確認 ----
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets(sheetName)
+    On Error GoTo 0
+    If ws Is Nothing Then
+        Set GetDictiFromSheet_util = Nothing ' シートが見つからない場合はNothingを返す
+        Exit Function
+    End If
+    
+    ' ---- 最終行を取得 ----
+    lastRow = ws.Cells(ws.Rows.Count, keyColumn).End(xlUp).row
+    If lastRow < startRow Then
+        Set GetDictionaryFromSheet = rowDict ' データが存在しない場合は空のDictionaryを返す
+        Exit Function
+    End If
+    
+    ' ---- データ範囲を配列に読み込む ----
+    dataArr = ws.Range(ws.Cells(startRow, keyColumn), ws.Cells(lastRow, valueColumn)).value
+    
+    ' ---- Dictionaryにデータを格納 ----
+    For i = 1 To UBound(dataArr, 1)
+        key = dataArr(i, 1) ' 配列内でのキーの列
+        value = dataArr(i, 2) ' 配列内での値の列
+        
+        ' キーが重複していないか確認
+        If Not rowDict.Exists(key) Then
+            rowDict.Add CStr(key), value
+        Else
+            ' キーの重複がある場合、必要に応じて処理を変更可能
+            ' 現在は無視して次に進む
+        End If
+    Next i
+    
+    ' ---- 結果を返す ----
+    Set GetDictiFromSheet_util = rowDict
+End Function
+
 
 '===============================================================================
 ' ダブルコーテーションを含むCSV文字列をString配列に変換する
@@ -227,8 +284,8 @@ End Function
 ' Return: AA,"BB",CC,"D,D",EE => AA | BB | CC | D,D | EE  という配列で返却
 '===============================================================================
 Function SplitCSV_util(inputText As String) As Variant
-    Dim elements As collection
-    Set elements = New collection
+    Dim elements As Collection
+    Set elements = New Collection
     
     Dim i As Integer
     Dim currentElement As String
@@ -265,8 +322,8 @@ Function SplitCSV_util(inputText As String) As Variant
     
     ' Collectionを配列に変換して返却
     Dim result() As String
-    ReDim result(1 To elements.count)
-    For i = 1 To elements.count
+    ReDim result(1 To elements.Count)
+    For i = 1 To elements.Count
         result(i) = elements(i)
     Next i
 
@@ -280,16 +337,16 @@ End Function
 ' sheetIndex: 読み込むシートのインデックス
 ' Return: 読み込んだコレクションオブジェクト、読み込めなければNothingを返却する
 '===============================================================================
-Function LoadExcel_util(filePath As String, sheetIndex As Integer) As collection
+Function LoadExcel_util(filePath As String, sheetIndex As Integer, startRow As Long, startCol As Long) As Collection
     Dim wb As Workbook
     Dim ws As Worksheet
-    Dim rowCollection As collection
+    Dim rowCollection As Collection
     Dim rowArray As Variant
     Dim lastRow As Long, lastCol As Long
     Dim i As Long, j As Long
     
     ' Collectionオブジェクトを初期化
-    Set rowCollection = New collection
+    Set rowCollection = New Collection
     
     ' ファイルの存在確認
     If Dir(filePath) = "" Then
@@ -303,7 +360,7 @@ Function LoadExcel_util(filePath As String, sheetIndex As Integer) As collection
     Set wb = Workbooks.Open(filePath, ReadOnly:=True)
     
     ' シートの存在確認
-    If sheetIndex < 1 Or sheetIndex > wb.Sheets.count Then
+    If sheetIndex < 1 Or sheetIndex > wb.Sheets.Count Then
         MsgBox "指定されたシートインデックスが無効です: " & sheetIndex, vbExclamation
         wb.Close False
         Set LoadExcel_util = Nothing
@@ -314,15 +371,41 @@ Function LoadExcel_util(filePath As String, sheetIndex As Integer) As collection
     Set ws = wb.Sheets(sheetIndex)
     
     ' データ範囲の最終行と最終列を取得
-    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
-    lastCol = ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
+    If startRow <> -1 Then
+        If startCol <> -1 Then
+            lastRow = ws.Cells(startRow, startCol).End(xlDown).row
+        Else
+            lastRow = ws.Cells(startRow, 1).End(xlDown).row
+        End If
+    Else
+        If startCol <> -1 Then
+            lastRow = ws.Cells(ws.Rows.Count, startCol).End(xlUp).row
+        Else
+            lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
+        End If
+        startRow = 1
+    End If
+    If startCol <> -1 Then
+        If startRow <> -1 Then
+            lastCol = ws.Cells(startRow, startCol).End(xlToRight).Column
+        Else
+            lastCol = ws.Cells(1, startCol).End(xlToRight).Column
+        End If
+    Else
+        If startRow <> -1 Then
+            lastCol = ws.Cells(startRow, ws.Columns.Count).End(xlToLeft).Column
+        Else
+            lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+        End If
+        startCol = 1
+    End If
     
     ' 各行をString配列としてCollectionに追加
-    For i = 1 To lastRow
-        ReDim rowArray(1 To lastCol)
+    For i = startRow To lastRow
+        ReDim rowArray(startCol To lastCol)
         
-        For j = 1 To lastCol
-            rowArray(j) = CStr(ws.Cells(i, j).Value) ' 各セルの値を文字列として取得
+        For j = startCol To lastCol
+            rowArray(j) = CStr(ws.Cells(i, j).value) ' 各セルの値を文字列として取得
         Next j
         
         rowCollection.Add rowArray
@@ -408,30 +491,93 @@ End Function
 '===============================================================================
 Function GetValuesAsArray_util(rng As Range, includeBlanks As Boolean) As Variant
     Dim cell As Range
-    Dim result As collection
-    Set result = New collection
+    Dim result As Collection
+    Set result = New Collection
     
     ' セルの値をコレクションに追加
     For Each cell In rng
-        If includeBlanks Or cell.Value <> "" Then
-            result.Add CStr(cell.Value)
+        If includeBlanks Or cell.value <> "" Then
+            result.Add CStr(cell.value)
         End If
     Next cell
     ' 値がない場合はNullを返す
-    If result.count = 0 Then
+    If result.Count = 0 Then
         GetValuesAsArray_util = Null
     Else
         ' コレクションを配列に変換して返す
         Dim arr() As String
-        ReDim arr(0 To result.count - 1)
+        ReDim arr(0 To result.Count - 1)
         
         Dim i As Integer
-        For i = 1 To result.count
+        For i = 1 To result.Count
             arr(i - 1) = result(i)
         Next i
         GetValuesAsArray_util = arr
     End If
 End Function
+
+'===============================================================================
+' 指定したシートからCollection型の二次元配列を作成する
+' sheetName: 取得先のシート名
+' startRow: 開始行
+' startCol: 開始列
+' return: Collectionの二次元配列を返却する
+'===============================================================================
+Function Get2DCollection(sheetName As String, startRow As Long, startCol As Long) As Collection
+    Dim ws As Worksheet
+    Dim resultList As New Collection
+    Dim rowData As Collection
+    Dim col As Long, row As Long
+    Dim endCol As Long
+    Dim cellValue As Variant
+    Dim isRowEmpty As Boolean
+
+    ' --- シート取得 ---
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets(sheetName)
+    On Error GoTo 0
+
+    If ws Is Nothing Then
+        Set Get2DCollection = Nothing
+        Exit Function
+    End If
+
+    ' --- 列の終端を判定（開始行で空白が出るまで） ---
+    col = startCol
+    Do While Trim(CStr(ws.Cells(startRow, col).value)) <> ""
+        col = col + 1
+    Loop
+    endCol = col - 1 ' 最後に値があった列
+
+    ' --- 行ループ（空行が出るまで） ---
+    row = startRow
+    Do
+        Set rowData = New Collection
+        isRowEmpty = True
+
+        ' --- 各列を読み込み ---
+        For col = startCol To endCol
+            cellValue = ws.Cells(row, col).value
+            rowData.Add cellValue
+            If Trim(CStr(cellValue)) <> "" Then
+                isRowEmpty = False
+            End If
+        Next col
+
+        ' 全列空白なら終了
+        If isRowEmpty Then Exit Do
+
+        ' 1行分を追加
+        resultList.Add rowData
+
+        row = row + 1
+    Loop
+
+    ' 結果を返却
+    Set Get2DCollection = resultList
+End Function
+
+
 
 
 '===============================================================================
@@ -441,12 +587,12 @@ End Function
 ' returnFullPath: 絶対パスを返却するかのフラグ　True:絶対パス　False:ファイル名だけ
 ' Return: Collectionを返却する
 '===============================================================================
-Function SearchFiles_util(folderPath As String, fileExtension As String, returnFullPath As Boolean) As collection
+Function SearchFiles_util(folderPath As String, fileExtension As String, returnFullPath As Boolean) As Collection
     Dim fso As Object
     Dim folder As Object
     Dim subFolder As Object
     Dim file As Object
-    Dim result As New collection
+    Dim result As New Collection
 
     ' FileSystemObjectを作成
     Set fso = CreateObject("Scripting.FileSystemObject")
@@ -475,7 +621,7 @@ Function SearchFiles_util(folderPath As String, fileExtension As String, returnF
     ' サブフォルダ内のファイルを再帰的に検索
     Dim temp As String
     For Each subFolder In folder.Subfolders
-        Dim subResult As collection
+        Dim subResult As Collection
         Set subResult = SearchFiles_util(subFolder.path, fileExtension, returnFullPath)
         If Not subResult Is Nothing Then
             Dim item As Variant
@@ -518,6 +664,22 @@ Function CutString_util(inputStr As String, byteLength As Long) As String
     CutString_util = Left(inputStr, cutPosition)
 End Function
 
+'===============================================================================
+' シートのデータクリアする
+' sheet: クリアするシート
+' startRow: クリアする開始行
+'===============================================================================
+Sub ClearSheet_Util(sheet As Worksheet, startRow As Long)
+    Dim lastRow As Long
+
+    ' 最終行を取得
+    lastRow = sheet.Cells(sheet.Rows.Count, 1).End(xlUp).row
+
+    ' 指定した行以降をクリア
+    If startRow <= lastRow Then
+        sheet.Rows(startRow & ":" & lastRow).ClearContents
+    End If
+End Sub
 
 '===============================================================================
 ' 住所を都道府県町名、番地、方書に分解する
@@ -562,8 +724,8 @@ Function SplitAddress_util(strAddress As String, toZenkaku As Boolean) As Varian
         additionalInfo = ConvertNumberWidth(Trim(match.SubMatches(2)), False)
     Else
         townName = strAddress
-        houseNumber = strAddress
-        additionalInfo = strAddress
+        houseNumber = ""
+        additionalInfo = ""
     End If
 
     ' 結果を表示
@@ -573,7 +735,7 @@ Function SplitAddress_util(strAddress As String, toZenkaku As Boolean) As Varian
         SplitAddress_util = Array(townName, houseNumber, additionalInfo)
     End If
 End Function
-'住所の全角を半角に変換する
+
 Function ConvertNumberWidth(inputStr As String, toHalfWidth As Boolean) As String
     Dim i As Long
     Dim c As String
