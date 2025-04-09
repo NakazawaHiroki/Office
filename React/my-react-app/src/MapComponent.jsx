@@ -31,7 +31,7 @@ const bubbleStyle = {
 
 const MapComponent = () => {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: 'AIzaSyAg13B6aIPtpC9ZBeL9t6VA_72B4YpBjmE'
+    googleMapsApiKey: '_____GoogleMapKey_______'
   });
 
   const [locations, ] = useState(locationsData);
