@@ -1,22 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { GoogleMap, OverlayView, useLoadScript } from '@react-google-maps/api';
 import './App.css';
-
+import Floating from './Floating'; // ← 追加：Floating ボタンを読み込む
 import locationsData from './locations_horror.js';
-
 
 // Googleマップのスタイル
 const mapContainerStyle = {
   width: '100%',
-  height: '100vh'
+  height: '100vh',
+  position: 'relative', // Floatingボタンを重ねるために必要
 };
 
 // 中心座標（東京駅）
 const center = { lat: 36.645091, lng: 138.192772 };
-// Googleマップのオプション（不要なUIを非表示）
-const options = {
-  disableDefaultUI: true,       // ← 全てのデフォルトUIを無効化（ズームボタン、ストリートビュー、人型アイコン等）
-};
 
 // Overlay（吹き出し）本体のスタイル
 const bubbleStyle = {
@@ -30,29 +26,39 @@ const bubbleStyle = {
 };
 
 const MapComponent = () => {
+  // APIキー読み込み完了後に useLoadScript を実行
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: '_____GoogleMapKey_______'
+    googleMapsApiKey: '_________KEY_________'  // 初期は空文字で防御
   });
 
+  const [zoomEnabled, setZoomEnabled] = useState(true);
   const [locations, ] = useState(locationsData);
+
+  const mapOptions = useMemo(() => ({
+    disableDefaultUI: true,
+    scrollwheel: zoomEnabled,
+  }), [zoomEnabled]);
 
   if (loadError) return <div>マップのロードエラーです。</div>;
   if (!isLoaded) return <div>マップを読み込み中...</div>;
 
   return (
-    <GoogleMap mapContainerStyle={mapContainerStyle} zoom={15} center={center} options={options}>
-      {locations.map(loc => (
-        <OverlayView
-          key={loc.id}
-          position={loc.position}
-          mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-          >
-          <div style={bubbleStyle}>
-            {loc.message}
-          </div>
-        </OverlayView>
-      ))}
-    </GoogleMap>
+    <div style={mapContainerStyle}>
+      <GoogleMap mapContainerStyle={mapContainerStyle} zoom={15} center={center} options={mapOptions}>
+        {locations.map(loc => (
+          <OverlayView
+            key={loc.id}
+            position={loc.position}
+            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            >
+            <div style={bubbleStyle}>
+              {loc.message}
+            </div>
+          </OverlayView>
+        ))}
+      </GoogleMap>
+      <Floating zoomEnabled={zoomEnabled} setZoomEnabled={setZoomEnabled} />
+    </div>
   );
 };
 

@@ -38,23 +38,13 @@ import React, { useState } from 'react';
     borderRadius: '4px',
     cursor: 'pointer'
   };
-  
-  const toggleButtonStyle = {
-    ...buttonStyle,
-    backgroundColor: '#2196F3'
-  };
 
 const Toolbar = () => {
   const [input, setInput] = useState('');
-  const [toggle, setToggle] = useState(false);
 
   const handleSend = () => {
     console.log('送信:', input);
     setInput('');
-  };
-
-  const handleToggle = () => {
-    setToggle(!toggle);
   };
 
   return (
@@ -67,9 +57,6 @@ const Toolbar = () => {
         style={inputStyle}
       />
       <button onClick={handleSend} style={buttonStyle}>送信</button>
-      <button onClick={handleToggle} style={toggleButtonStyle}>
-        {toggle ? 'ON' : 'OFF'}
-      </button>
     </div>
   );
 };
