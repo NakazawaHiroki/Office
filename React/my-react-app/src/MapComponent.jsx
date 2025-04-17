@@ -1,20 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { GoogleMap, OverlayView, useLoadScript } from '@react-google-maps/api';
 import './App.css';
-import Floating from './Floating'; // ← 追加：Floating ボタンを読み込む
+import Floating from './Floating';
 import locationsData from './locations_horror.js';
 
-// Googleマップのスタイル
 const mapContainerStyle = {
   width: '100%',
   height: '100vh',
-  position: 'relative', // Floatingボタンを重ねるために必要
+  position: 'relative',
 };
 
-// 中心座標（東京駅）
-const center = { lat: 36.645091, lng: 138.192772 };
+const defaultCenter = { lat: 36.645091, lng: 138.192772 };
 
-// Overlay（吹き出し）本体のスタイル
 const bubbleStyle = {
   position: 'absolute',
   background: '#fff',
@@ -22,21 +19,33 @@ const bubbleStyle = {
   borderRadius: '6px',
   padding: '0px 5px 0px 5px',
   fontSize: '14px',
-  whiteSpace: 'nowrap'
+  whiteSpace: 'nowrap',
+  pointerEvents: 'none', // 吹き出しでクリック遮らないように
 };
 
 const MapComponent = () => {
-  // APIキー読み込み完了後に useLoadScript を実行
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: '_________KEY_________'  // 初期は空文字で防御
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY
   });
 
   const [zoomEnabled, setZoomEnabled] = useState(true);
-  const [locations, ] = useState(locationsData);
+  const [locations] = useState(locationsData);
+
+  const mapRef = useRef();
+
+  const onLoad = useCallback(map => {
+    mapRef.current = map;
+
+    // ビューポートに収める（locationsからbounds計算）
+    const bounds = new window.google.maps.LatLngBounds();
+    locations.forEach(loc => bounds.extend(loc.position));
+    map.fitBounds(bounds);
+  }, [locations]);
 
   const mapOptions = useMemo(() => ({
     disableDefaultUI: true,
     scrollwheel: zoomEnabled,
+    gestureHandling: 'greedy',
   }), [zoomEnabled]);
 
   if (loadError) return <div>マップのロードエラーです。</div>;
@@ -44,20 +53,26 @@ const MapComponent = () => {
 
   return (
     <div style={mapContainerStyle}>
-      <GoogleMap mapContainerStyle={mapContainerStyle} zoom={15} center={center} options={mapOptions}>
+      <Floating zoomEnabled={zoomEnabled} setZoomEnabled={setZoomEnabled} />
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        zoom={8}
+        center={defaultCenter}
+        options={mapOptions}
+        onLoad={onLoad}
+      >
         {locations.map(loc => (
           <OverlayView
             key={loc.id}
             position={loc.position}
             mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-            >
+          >
             <div style={bubbleStyle}>
               {loc.message}
             </div>
           </OverlayView>
         ))}
       </GoogleMap>
-      <Floating zoomEnabled={zoomEnabled} setZoomEnabled={setZoomEnabled} />
     </div>
   );
 };
