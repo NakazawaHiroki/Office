@@ -188,3 +188,5 @@ cython_debug/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+React/my-react-app/.vs/slnx.sqlite-journal
+React/my-react-app/.vs/slnx.sqlite
