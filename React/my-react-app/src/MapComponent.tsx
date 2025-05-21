@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
 import './App.css';
-import Floating from './Floating';
+import Floating from './Floating.tsx';
 import locationsData from './locations_horror.js'; // volume対応版を想定
 
 const mapContainerStyle = {
@@ -62,7 +62,7 @@ const createSvgMarker = (text, fontSize = 14) => {
 
 const MapComponent = () => {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: '___________KEY___________'
+    googleMapsApiKey: 'AIzaSyBXBdga-zIe5X5aBI9GeQUkv_N9fw31KJY'
   });
 
   const [zoomEnabled, setZoomEnabled] = useState(true);

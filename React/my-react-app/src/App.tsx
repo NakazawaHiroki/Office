@@ -1,6 +1,6 @@
 import React from 'react';
-import MapComponent from './MapComponent'; // ← MapComponentを読み込む
-import Toolbar from './Toolbar';
+import MapComponent from './MapComponent.tsx'; // ← MapComponentを読み込む
+import Toolbar from './Toolbar.tsx';
 import './App.css';
 
 function App() {
