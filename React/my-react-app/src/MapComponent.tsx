@@ -2,18 +2,29 @@ import React, { useState, useMemo } from 'react';
 import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
 import './App.css';
 import Floating from './Floating.tsx';
-import locationsData from './locations_horror.js'; // volume対応版を想定
+import locationsData from './locations_horror.ts';
 
-const mapContainerStyle = {
+// 地図コンテナのスタイル型注釈
+const mapContainerStyle: React.CSSProperties = {
   width: '100%',
   height: '100vh',
   position: 'relative',
 };
 
-const center = { lat: 36.645091, lng: 138.192772 };
+// 地図の中心座標の型と値
+type LatLng = { lat: number; lng: number };
+const center: LatLng = { lat: 36.645091, lng: 138.192772 };
 
-// volume に応じてフォントサイズを変える
-const getFontSize = (volume) => {
+// location データの型定義
+type Location = {
+  id: string | number;
+  position: LatLng;
+  message: string;
+  volume: number;
+};
+
+// volume に応じたフォントサイズの取得
+const getFontSize = (volume: number): number => {
   if (volume === 1) return 12;
   if (volume === 2) return 14;
   if (volume === 3) return 16;
@@ -21,17 +32,29 @@ const getFontSize = (volume) => {
 };
 
 // Canvas を使って文字列の描画幅を測定
-const measureTextWidth = (text, fontSize = 14, fontFamily = 'Arial') => {
+const measureTextWidth = (
+  text: string,
+  fontSize: number = 14,
+  fontFamily: string = 'Arial'
+): number => {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
+  if (!ctx) return 0;
   ctx.font = `${fontSize}px ${fontFamily}`;
   return ctx.measureText(text).width;
 };
 
-// SVGマーカーを作成（長方形＋角丸）
-const createSvgMarker = (text, fontSize = 14) => {
-  const paddingH = 10; // 左右余白
-  const paddingV = 4;  // 上下余白
+// SVGマーカー情報の型
+type MarkerIcon = {
+  url: string;
+  size: { width: number; height: number };
+  anchor: { x: number; y: number };
+};
+
+// SVGマーカー生成関数
+const createSvgMarker = (text: string, fontSize: number = 14): MarkerIcon => {
+  const paddingH = 10;
+  const paddingV = 4;
   const measuredWidth = measureTextWidth(text, fontSize);
   const width = Math.ceil(measuredWidth + paddingH * 2);
   const height = fontSize + paddingV * 2;
@@ -59,14 +82,14 @@ const createSvgMarker = (text, fontSize = 14) => {
   };
 };
 
-
-const MapComponent = () => {
+// メインコンポーネント
+const MapComponent: React.FC = () => {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: 'AIzaSyBXBdga-zIe5X5aBI9GeQUkv_N9fw31KJY'
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
   });
 
-  const [zoomEnabled, setZoomEnabled] = useState(true);
-  const [locations] = useState(locationsData);
+  const [zoomEnabled, setZoomEnabled] = useState<boolean>(true);
+  const [locations] = useState<Location[]>(locationsData); // 配列の型を指定
 
   const mapOptions = useMemo(() => ({
     disableDefaultUI: true,
@@ -84,22 +107,22 @@ const MapComponent = () => {
         center={center}
         options={mapOptions}
       >
-      {locations.map(loc => {
-        const fontSize = getFontSize(loc.volume);
-        const { url, size, anchor } = createSvgMarker(loc.message, fontSize);
+        {locations.map((loc) => {
+          const fontSize = getFontSize(loc.volume);
+          const { url, size, anchor } = createSvgMarker(loc.message, fontSize);
 
-        return (
-          <Marker
-            key={loc.id}
-            position={loc.position}
-            icon={{
-              url,
-              scaledSize: new window.google.maps.Size(size.width, size.height),
-              anchor: new window.google.maps.Point(anchor.x, anchor.y)
-            }}
-          />
-        );
-      })}
+          return (
+            <Marker
+              key={loc.id}
+              position={loc.position}
+              icon={{
+                url,
+                scaledSize: new window.google.maps.Size(size.width, size.height),
+                anchor: new window.google.maps.Point(anchor.x, anchor.y),
+              }}
+            />
+          );
+        })}
       </GoogleMap>
 
       <Floating zoomEnabled={zoomEnabled} setZoomEnabled={setZoomEnabled} />
