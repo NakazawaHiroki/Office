@@ -82,10 +82,12 @@ const createSvgMarker = (text: string, fontSize: number = 14): MarkerIcon => {
   };
 };
 
+const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
 // メインコンポーネント
 const MapComponent: React.FC = () => {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: apiKey
   });
 
   const [zoomEnabled, setZoomEnabled] = useState<boolean>(true);
