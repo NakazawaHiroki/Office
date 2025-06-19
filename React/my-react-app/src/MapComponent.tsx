@@ -10,17 +10,20 @@ import Floating from './Floating.tsx';
 import locationsData from './locations_horror.ts';
 
 /* ---------- 定数 & 型 ---------- */
-
-type LatLng = google.maps.LatLngLiteral;               // Google Maps が型を持っているので転用
-type Location = typeof locationsData[number];          // data の型そのまま流用（id / position / message / volume）
-
 const CENTER: LatLng = { lat: 36.645091, lng: 138.192772 };
 const MAP_CONTAINER_STYLE: React.CSSProperties = { width: '100%', height: '100vh', position: 'relative' };
-
 /* volume → font-size 変換は定数テーブルで十分 */
 const FONT_SIZE_MAP: Record<number, number> = { 1: 12, 2: 30 };
 const DEFAULT_FONT_SIZE = 14;
 
+type LatLng = google.maps.LatLngLiteral;               // Google Maps が型を持っているので転用
+//type Location = typeof locationsData[number];          // data の型そのまま流用（id / position / message / volume）
+type MarkerIcon = {
+  url: string;
+  size: { width: number; height: number };
+  anchor: { x: number; y: number };
+};
+type MarkerItem = { id: string } & Omit<MarkerProps, 'key'>;
 /* ---------- ユーティリティ ---------- */
 
 /** 再利用する 2D Canvas。毎回生成しない */
@@ -91,12 +94,6 @@ const createSvgMarker = (() => {
   };
 })();
 
-type MarkerIcon = {
-  url: string;
-  size: { width: number; height: number };
-  anchor: { x: number; y: number };
-};
-
 /* ---------- メインコンポーネント ---------- */
 
 const MapComponent: React.FC = () => {
@@ -114,14 +111,14 @@ const MapComponent: React.FC = () => {
   );
 
   /** Marker 描画オブジェクトを 1 回だけ構築 */
-  const markers = useMemo<MarkerProps[]>(() => {
-    if (!isLoaded) return [];               // ← ここがポイント
+  const markers = useMemo<MarkerItem[]>(() => {
+    if (!isLoaded) return [];               // ロードが完了していなければ作成しない
     return locationsData.map((loc) => {
       const fontSize = FONT_SIZE_MAP[loc.volume] ?? DEFAULT_FONT_SIZE;
       const { url, size, anchor } = createSvgMarker(loc.message, fontSize);
 
       return {
-        key: String(loc.id),
+        id: String(loc.id),
         position: loc.position,
         icon: {
           url,
@@ -143,8 +140,8 @@ const MapComponent: React.FC = () => {
         center={CENTER}
         options={mapOptions}
       >
-        {markers.map((props) => (
-          <Marker {...props} />
+        {markers.map(({id, ...markerProps}) => (
+          <Marker key={id} {...markerProps} />
         ))}
       </GoogleMap>
 
