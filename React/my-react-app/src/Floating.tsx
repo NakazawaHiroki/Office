@@ -1,7 +1,12 @@
-// src/Floating.jsx
+// src/Floating.tsx
 import React from 'react';
 
-const buttonStyle = {
+type Props = {
+  zoomEnabled: boolean;
+  setZoomEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+const buttonStyle: React.CSSProperties = {
   position: 'absolute',
   top: '16px',
   right: '16px',
@@ -15,13 +20,13 @@ const buttonStyle = {
   zIndex: 1000
 };
 
-const Floating = ({ zoomEnabled, setZoomEnabled }) => {
-    const handleToggle = () => setZoomEnabled(prev => !prev);
-    return (
-      <button onClick={handleToggle} style={buttonStyle}>
-        {zoomEnabled ? 'ON' : 'OFF'}
-      </button>
-    );
+const Floating: React.FC<Props> = ({ zoomEnabled, setZoomEnabled }) => {
+  const handleToggle = () => setZoomEnabled(prev => !prev);
+  return (
+    <button onClick={handleToggle} style={buttonStyle}>
+      {zoomEnabled ? 'ON' : 'OFF'}
+    </button>
+  );
 };
 
 export default Floating;
